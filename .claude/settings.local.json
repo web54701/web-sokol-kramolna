@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(claude mcp *)",
+      "Skill(commit-commands:commit-push-pr)",
+      "Bash(git checkout *)"
+    ]
+  }
+}
