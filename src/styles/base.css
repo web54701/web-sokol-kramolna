@@ -48,28 +48,11 @@
 .sk-logo {
   display: flex;
   align-items: center;
-  gap: 14px;
 }
-.sk-logo-mark {
-  width: 48px;
+.sk-logo-img {
   height: 48px;
-  border-radius: 50%;
-  border: 1.5px solid var(--sk-cream-50);
-  display: grid;
-  place-items: center;
-  font-family: "Source Serif 4", serif;
-  font-weight: 800;
-  font-size: 22px;
-  letter-spacing: -0.02em;
-  color: var(--sk-cream-50);
-  font-style: italic;
-}
-.sk-logo-text {
-  font-family: "Source Serif 4", serif;
-  font-weight: 700;
-  font-size: 17px;
-  line-height: 1.05;
-  letter-spacing: 0.01em;
+  width: auto;
+  display: block;
 }
 
 .sk-nav {
