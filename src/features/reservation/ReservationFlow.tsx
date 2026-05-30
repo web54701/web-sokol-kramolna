@@ -20,6 +20,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
   const [form, setForm] = useState<FormState>({ name: '', email: '', phone: '', note: '', agree: false, payment: 'hotove' });
   const [touched, setTouched] = useState(false);
   const [code, setCode] = useState('');
+  const [showRules, setShowRules] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const { dayNo, slots } = sel;
@@ -336,7 +337,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
           <div className="full" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             <label className="skp-check">
               <input type="checkbox" checked={form.agree} onChange={(e) => setForm({ ...form, agree: e.target.checked })} />
-              <span>Souhlasím s <a>provozním řádem areálu</a> a se zpracováním údajů pro účely rezervace.</span>
+              <span>Souhlasím s <a onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowRules(true); }}>provozním řádem areálu</a> a se zpracováním údajů pro účely rezervace.</span>
             </label>
             {touched && !form.agree && <span className="skp-err-msg">Pro pokračování je nutný souhlas.</span>}
           </div>
@@ -378,13 +379,54 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
     );
   }
 
-  return (
-    <div ref={scrollRef} className="skp-scroll" style={{ paddingRight: 4 }}>
-      <div style={{ marginBottom: 20 }}>{stepper}</div>
-      <div className="skp-resv">
-        <div className="skp-resv-main">{mainContent}</div>
-        {summary}
+  const rulesModal = showRules && (
+    <div className="skp-modal-overlay" onClick={() => setShowRules(false)}>
+      <div className="skp-modal" onClick={(e) => e.stopPropagation()}>
+        <button className="skp-modal-close" onClick={() => setShowRules(false)} aria-label="Zavřít">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+            <path d="M18 6 6 18M6 6l12 12"/>
+          </svg>
+        </button>
+        <h3>Provozní řád tenisového kurtu</h3>
+        <p>Vítejte na našem kurtu! Abychom udrželi antuku v perfektním stavu pro vás i pro ty, co přijdou po vás, dodržujte prosím tato základní pravidla:</p>
+        <h4>1. Klíče a bezpečnost</h4>
+        <ul>
+          <li><strong>Vstup a odchod:</strong> Klíče od kurtu si vyzvedávejte a vracejte podle domluvených pravidel.</li>
+          <li><strong>Zamykání:</strong> Poslední hráč dne (nebo pokud po vás nikdo nenastupuje) je povinen kurt i zázemí vždy uzamknout.</li>
+          <li><strong>Skládek:</strong> Klíč od kurtu pasuje také do skládku s vybavením. Najdete v něm lajnovačku, vápno, košťata a síť. Po použití nářadí vše ukliďte zpět a skládek zamkněte.</li>
+        </ul>
+        <h4>2. Údržba kurtu a lajnování</h4>
+        <ul>
+          <li><strong>Kropení:</strong> Pokud je kurt suchý nebo práší, před hrou ho důkladně pokropte. Antuka se tím chrání před poničením.</li>
+          <li><strong>Srovnání povrchu:</strong> Případné díry po skluzu ihned zarovnejte (zašlápněte) ještě během hry.</li>
+          <li><strong>Lajnování:</strong> Kurt nemá pevné lajny. Před hrou (nebo podle potřeby) si kurt nalajnujte vápnem pomocí lajnovačky ze skládku.</li>
+          <li><strong>Úklid po hře:</strong> Každý hráč je povinen po skončení hry kurt stáhnout síťovanou metlou (od krajů ke středu), aby byl připravený pro další hráče.</li>
+        </ul>
+        <h4>3. Obecné zásady</h4>
+        <ul>
+          <li>Na kurt je povolen vstup pouze v tenisové obuvi určené na antuku (hladký vzorek, ne hrubá podrážka/traktory).</li>
+          <li>Chovejte se k vybavení ohleduplně a udržujte na kurtu i v jeho okolí pořádek.</li>
+        </ul>
+        <p className="skp-modal-footer">Díky, že pomáháte udržovat kurt v super stavu! Hře zdar!</p>
+        <div style={{ marginTop: 24 }}>
+          <button className="skp-btn-primary" style={{ maxWidth: 260 }} onClick={() => { setShowRules(false); setForm(f => ({ ...f, agree: true })); }}>
+            Souhlasím s provozním řádem
+          </button>
+        </div>
       </div>
     </div>
+  );
+
+  return (
+    <>
+      <div ref={scrollRef} className="skp-scroll" style={{ paddingRight: 4 }}>
+        <div style={{ marginBottom: 20 }}>{stepper}</div>
+        <div className="skp-resv">
+          <div className="skp-resv-main">{mainContent}</div>
+          {summary}
+        </div>
+      </div>
+      {rulesModal}
+    </>
   );
 }
