@@ -1,0 +1,30 @@
+:root {
+  --sk-green-900: #143028;
+  --sk-green-800: #1a3a2e;
+  --sk-green-700: #1f4537;
+  --sk-green-600: #2c5847;
+  --sk-green-400: #6a8e7a;
+  --sk-green-100: #d9e1d5;
+
+  --sk-cream-50:  #faf5e8;
+  --sk-cream-100: #f3ecdc;
+  --sk-cream-200: #ede4ce;
+  --sk-cream-300: #e2d8be;
+
+  --sk-rust:      #c45a35;
+  --sk-rust-dark: #a64a2a;
+  --sk-rust-soft: #d97a55;
+
+  --sk-gold:      #d4a82a;
+
+  --sk-ink:       #0f2a1e;
+  --sk-ink-soft:  #2c3e36;
+  --sk-mute:      #5a6b62;
+
+  --sk-line:      rgba(20, 48, 40, 0.10);
+  --sk-line-soft: rgba(20, 48, 40, 0.06);
+
+  --sk-status-ok:   #b7d4a8;
+  --sk-status-busy: #e89a5b;
+  --sk-status-na:   #d6d3c8;
+}
