@@ -33,7 +33,6 @@ export function Header({ active, onNavigate }: HeaderProps) {
           </a>
         ))}
       </nav>
-      <div className="sk-header-deco">[ panorama Kramolny ]</div>
     </header>
   );
 }
