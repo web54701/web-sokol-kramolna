@@ -4,15 +4,8 @@
 .sk-subnav a { transition: color .12s; }
 .sk-subnav a:hover { color: var(--sk-green-800); }
 
-/* scrollovatelný obsah stránky */
-.skp-scroll {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-.skp-scroll::-webkit-scrollbar { width: 10px; }
-.skp-scroll::-webkit-scrollbar-thumb { background: var(--sk-cream-300); border-radius: 6px; border: 3px solid var(--sk-cream-100); }
+/* scrollovatelný obsah stránky (scroll je na úrovni dokumentu) */
+.skp-scroll { width: 100%; }
 
 /* ---------- Přehled (info dlaždice) ---------- */
 .skp-overview {
@@ -353,18 +346,11 @@ textarea.skp-input { height: 80px; padding-top: 11px; resize: none; }
 .skp-value .t { font-family: "Source Serif 4", serif; font-weight: 700; font-size: 18px; color: var(--sk-green-800); }
 .skp-value .d { font-size: 13px; color: var(--sk-ink-soft); line-height: 1.5; margin-top: 5px; }
 
-/* prototyp: vnitřní scroll obsahu, footer drží dole */
-.skp-page .sk-pagewrap { min-height: 0; }
-
 /* ---------- Úvodní stránka ---------- */
-.skp-home { overflow: hidden; }
 .skp-home-scroll {
-  flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden;
   display: flex; flex-direction: column;
   background: var(--sk-cream-100);
 }
-.skp-home-scroll::-webkit-scrollbar { width: 10px; }
-.skp-home-scroll::-webkit-scrollbar-thumb { background: var(--sk-cream-300); border-radius: 6px; border: 3px solid var(--sk-cream-100); }
 
 .skp-home-hero {
   position: relative;
