@@ -48,11 +48,23 @@
 .sk-logo {
   display: flex;
   align-items: center;
+  gap: 12px;
 }
 .sk-logo-img {
   height: 48px;
   width: auto;
   display: block;
+}
+.sk-logo-text {
+  display: flex;
+  flex-direction: column;
+  font-family: "Source Sans 3", sans-serif;
+  font-weight: 700;
+  font-size: 19px;
+  line-height: 1.15;
+  letter-spacing: 0.06em;
+  color: var(--sk-cream-50);
+  text-transform: uppercase;
 }
 
 .sk-nav {
@@ -321,3 +333,101 @@
   margin-right: 7px;
   vertical-align: -2px;
 }
+
+/* ---------- Action cards (homepage CTA) ---------- */
+
+.sk-action-card {
+  border-radius: 16px;
+  padding: 28px 30px 24px;
+  color: var(--sk-cream-50);
+  position: relative;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 14px 28px rgba(20,48,40,0.18);
+}
+.sk-action-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 36px rgba(20,48,40,0.22);
+}
+.sk-action-card.is-green { background: var(--sk-green-800); }
+.sk-action-card.is-rust  { background: var(--sk-rust); }
+
+.sk-action-icon {
+  position: absolute;
+  left: 28px;
+  top: 32px;
+  width: 76px;
+  height: 76px;
+  display: grid;
+  place-items: center;
+  color: var(--sk-cream-50);
+  opacity: 0.95;
+}
+.sk-action-body {
+  margin-left: 96px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.sk-action-title {
+  font-family: "Source Serif 4", serif;
+  font-weight: 700;
+  font-size: 30px;
+  line-height: 1;
+  margin: 4px 0 6px;
+}
+.sk-action-sub {
+  font-size: 15px;
+  opacity: 0.85;
+  line-height: 1.35;
+}
+.sk-action-cta {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  padding-top: 16px;
+}
+
+/* ---------- Info row ---------- */
+
+.sk-info-row {
+  flex-shrink: 0;
+  background: var(--sk-cream-50);
+  border-top: 1px solid var(--sk-line);
+  padding: 26px 56px 22px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 36px;
+  position: relative;
+  z-index: 1;
+}
+.sk-info-col h4 {
+  margin: 0 0 8px;
+  font-family: "Source Serif 4", serif;
+  font-size: 17px;
+  color: var(--sk-green-800);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sk-info-icon {
+  width: 22px;
+  height: 22px;
+  color: var(--sk-green-800);
+}
+.sk-info-col p, .sk-info-col li {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--sk-ink-soft);
+}
+.sk-info-col ul { list-style: none; padding: 0; }
+.sk-info-col .k { font-weight: 600; color: var(--sk-green-800); display: inline-block; min-width: 64px; }

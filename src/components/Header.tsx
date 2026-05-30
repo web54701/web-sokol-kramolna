@@ -8,15 +8,19 @@ const NAV_ITEMS: { label: string; route: Route }[] = [
 ];
 
 type HeaderProps = {
-  active: string;
+  active: string | null;
   onNavigate: (route: Route) => void;
 };
 
 export function Header({ active, onNavigate }: HeaderProps) {
   return (
     <header className="sk-header">
-      <div className="sk-logo" onClick={() => onNavigate('tenis')}>
-        <img src="/logo_sokol.png" alt="Sokol Kramolna" className="sk-logo-img" />
+      <div className="sk-logo" onClick={() => onNavigate('home')} aria-label="Sokol Kramolna">
+        <img src="/logo_sokol.png" alt="" className="sk-logo-img" />
+        <div className="sk-logo-text">
+          <span>SOKOL</span>
+          <span>KRAMOLNA</span>
+        </div>
       </div>
       <nav className="sk-nav">
         {NAV_ITEMS.map((it) => (
