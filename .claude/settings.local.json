@@ -3,7 +3,11 @@
     "allow": [
       "Bash(claude mcp *)",
       "Skill(commit-commands:commit-push-pr)",
-      "Bash(git checkout *)"
+      "Bash(git checkout *)",
+      "Bash(git config *)",
+      "mcp__playwright__browser_navigate",
+      "Bash(curl -s http://localhost:5174/)",
+      "mcp__playwright__browser_take_screenshot"
     ]
   }
 }
