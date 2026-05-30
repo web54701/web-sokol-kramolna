@@ -34,7 +34,7 @@ export default function App() {
 
   return (
     <>
-      {route === 'home' && <HomePage onNavigate={go} />}
+{route === 'home' && <HomePage onNavigate={go} />}
       {route === 'tenis' && <ActivityPage mode="tenis" tab={tenisTab} setTab={setTenisTab} onNavigate={go} />}
       {route === 'gym' && <ActivityPage mode="gym" tab={gymTab} setTab={setGymTab} onNavigate={go} />}
       {route === 'onas' && <OnasPage onNavigate={go} />}
