@@ -43,6 +43,7 @@
   padding: 0 56px;
   gap: 56px;
   flex-shrink: 0;
+  position: relative;
 }
 
 .sk-logo {
@@ -58,8 +59,8 @@
 .sk-logo-text {
   display: flex;
   flex-direction: column;
-  font-family: "Source Sans 3", sans-serif;
-  font-weight: 700;
+  font-family: "Barlow Condensed", sans-serif;
+  font-weight: 600;
   font-size: 19px;
   line-height: 1.15;
   letter-spacing: 0.06em;
@@ -71,28 +72,21 @@
   display: flex;
   align-items: center;
   gap: 36px;
-  margin-left: auto;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 .sk-navlink {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 500;
   color: var(--sk-cream-50);
   text-decoration: none;
-  position: relative;
   padding: 24px 0;
   cursor: pointer;
   letter-spacing: 0.005em;
 }
 .sk-navlink.is-active {
   color: var(--sk-gold);
-}
-.sk-navlink.is-active::after {
-  content: "";
-  position: absolute;
-  left: 0; right: 0;
-  bottom: 18px;
-  height: 2px;
-  background: var(--sk-gold);
 }
 
 .sk-header-deco {
