@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { HomePage } from './pages/HomePage';
 import { ActivityPage } from './pages/ActivityPage';
 import { OnasPage } from './pages/OnasPage';
 import { KontaktPage } from './pages/KontaktPage';
@@ -17,7 +18,7 @@ function loadState(): AppState {
     const saved = JSON.parse(localStorage.getItem(LS_KEY) ?? 'null');
     if (saved && typeof saved === 'object') return saved as AppState;
   } catch {}
-  return { route: 'tenis', tenisTab: 'Přehled', gymTab: 'Přehled' };
+  return { route: 'home', tenisTab: 'Přehled', gymTab: 'Přehled' };
 }
 
 export default function App() {
@@ -33,6 +34,7 @@ export default function App() {
 
   return (
     <>
+      {route === 'home' && <HomePage onNavigate={go} />}
       {route === 'tenis' && <ActivityPage mode="tenis" tab={tenisTab} setTab={setTenisTab} onNavigate={go} />}
       {route === 'gym' && <ActivityPage mode="gym" tab={gymTab} setTab={setGymTab} onNavigate={go} />}
       {route === 'onas' && <OnasPage onNavigate={go} />}
