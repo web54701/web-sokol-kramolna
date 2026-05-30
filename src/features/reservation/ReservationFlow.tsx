@@ -333,10 +333,13 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
               </label>
             </div>
           </div>
-          <label className="skp-check full">
-            <input type="checkbox" checked={form.agree} onChange={(e) => setForm({ ...form, agree: e.target.checked })} />
-            <span>Souhlasím s <a>provozním řádem areálu</a> a se zpracováním údajů pro účely rezervace.</span>
-          </label>
+          <div className="full" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label className="skp-check">
+              <input type="checkbox" checked={form.agree} onChange={(e) => setForm({ ...form, agree: e.target.checked })} />
+              <span>Souhlasím s <a>provozním řádem areálu</a> a se zpracováním údajů pro účely rezervace.</span>
+            </label>
+            {touched && !form.agree && <span className="skp-err-msg">Pro pokračování je nutný souhlas.</span>}
+          </div>
         </div>
       </div>
     );
