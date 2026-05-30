@@ -16,11 +16,7 @@ export function Header({ active, onNavigate }: HeaderProps) {
   return (
     <header className="sk-header">
       <div className="sk-logo" onClick={() => onNavigate('tenis')}>
-        <div className="sk-logo-mark">S</div>
-        <div className="sk-logo-text">
-          <div>SOKOL</div>
-          <div>KRAMOLNA</div>
-        </div>
+        <img src="/logo_sokol.png" alt="Sokol Kramolna" className="sk-logo-img" />
       </div>
       <nav className="sk-nav">
         {NAV_ITEMS.map((it) => (
