@@ -14,9 +14,7 @@ export function HomePage({ onNavigate }: Props) {
 
       <div className="skp-home-scroll">
         <div className="skp-home-hero">
-          <div className="skp-home-hero-placeholder">
-            <span className="skp-home-hero-placeholder-text">[ fotografie areálu ]</span>
-          </div>
+          <img src="/hero.png" alt="Antukový tenisový kurt" />
           <div className="skp-home-hero-scrim" />
           <div className="skp-home-hero-text">
             <h1>Sokol Kramolna</h1>

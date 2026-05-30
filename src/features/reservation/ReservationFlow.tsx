@@ -9,7 +9,7 @@ type Props = {
 };
 
 type SelState = { dayNo: number | null; slots: number[] };
-type FormState = { name: string; email: string; phone: string; note: string; agree: boolean };
+type FormState = { name: string; email: string; phone: string; note: string; agree: boolean; payment: 'hotove' | 'prevod' };
 
 export function ReservationFlow({ mode, onGoOverview }: Props) {
   const cfg = MODES[mode];
@@ -17,7 +17,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
   const [step, setStep] = useState(1);
   const [weekOff, setWeekOff] = useState(0);
   const [sel, setSel] = useState<SelState>({ dayNo: null, slots: [] });
-  const [form, setForm] = useState<FormState>({ name: '', email: '', phone: '', note: '', agree: false });
+  const [form, setForm] = useState<FormState>({ name: '', email: '', phone: '', note: '', agree: false, payment: 'hotove' });
   const [touched, setTouched] = useState(false);
   const [code, setCode] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -82,7 +82,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
 
   const emailOk = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email.trim());
   const nameOk = form.name.trim().length >= 2;
-  const phoneOk = form.phone.replace(/\s/g, '').length >= 9;
+  const phoneOk = form.phone.trim().length === 0 || form.phone.replace(/\s/g, '').length >= 9;
   const formOk = nameOk && emailOk && phoneOk && form.agree;
 
   function genCode(): string {
@@ -101,7 +101,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
   function reset() {
     setStep(1);
     setSel({ dayNo: null, slots: [] });
-    setForm({ name: '', email: '', phone: '', note: '', agree: false });
+    setForm({ name: '', email: '', phone: '', note: '', agree: false, payment: 'hotove' });
     setTouched(false);
     setCode('');
   }
@@ -124,7 +124,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
             </div>
             <div>
               <h2>Rezervace předběžně potvrzena</h2>
-              <p className="lead">Zaslali jsme vám potvrzovací kód na e-mail — rezervaci dokončíte kliknutím na odkaz v něm.</p>
+              <p className="lead">Zaslali jsme vám potvrzovací kód na e-mail — rezervaci dokončíte nebo kdykoliv zdarma zrušíte kliknutím na odkaz v něm.</p>
             </div>
           </div>
 
@@ -138,11 +138,11 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
             </div>
 
             <div className="skp-success-detail">
-              <div className="row"><span className="k">{mode === 'tenis' ? 'Kurt' : 'Posilovna'}</span><span className="v">{cfg.courtShort}</span></div>
               <div className="row"><span className="k">Termín</span><span className="v">{DOW[selDate!.getDay()]} {fmtDMY(selDate!)}</span></div>
               <div className="row"><span className="k">Čas</span><span className="v">{timeLabel} · {hoursCount} h</span></div>
               <div className="row"><span className="k">Jméno</span><span className="v">{form.name}</span></div>
-              <div className="row"><span className="k">K úhradě na místě</span><span className="v" style={{ fontSize: 16 }}>{total} Kč</span></div>
+              <div className="row"><span className="k">Platba</span><span className="v">{form.payment === 'hotove' ? 'Hotově' : 'Převodem'}</span></div>
+              <div className="row"><span className="k">Celkem</span><span className="v" style={{ fontSize: 16 }}>{total} Kč</span></div>
             </div>
           </div>
 
@@ -205,14 +205,19 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
     <div className="skp-stepper">
       {STEPS.map(([n, label], i) => {
         const idx = i + 1;
-        const cls = step === idx ? 'active' : step > idx ? 'done' : '';
+        const isDone = step > idx;
+        const cls = step === idx ? 'active' : isDone ? 'done' : '';
         return (
           <React.Fragment key={n}>
-            <div className={'skp-step ' + cls}>
-              <span className="num">{step > idx ? '✓' : n}</span>
+            <div
+              className={'skp-step ' + cls}
+              onClick={isDone ? () => goStep(idx) : undefined}
+              style={isDone ? { cursor: 'pointer' } : undefined}
+            >
+              <span className="num">{isDone ? '✓' : n}</span>
               <span>{label}</span>
             </div>
-            {idx < 3 && <span className={'skp-step-line' + (step > idx ? ' done' : '')} />}
+            {idx < 3 && <span className={'skp-step-line' + (isDone ? ' done' : '')} />}
           </React.Fragment>
         );
       })}
@@ -247,7 +252,14 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
               {week.map((d) => {
                 const info = slotInfo(d, h);
                 const isSel = epochDay(d) === dayNo && slots.includes(h);
-                const cls = ['sk-cal-cell', 'sk-cal-slot', info.st, isSel ? 'sel' : ''].join(' ');
+                let selCls = '';
+                if (isSel) {
+                  if (sortedSlots.length === 1) selCls = 'sel sel-only';
+                  else if (h === sortedSlots[0]) selCls = 'sel sel-top';
+                  else if (h === sortedSlots[sortedSlots.length - 1]) selCls = 'sel sel-bot';
+                  else selCls = 'sel sel-mid';
+                }
+                const cls = ['sk-cal-cell', 'sk-cal-slot', info.st, selCls].filter(Boolean).join(' ');
                 return (
                   <div
                     key={d.getTime() + '-' + h}
@@ -288,6 +300,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
             <label>Jméno a příjmení <span className="req">*</span></label>
             <input className={'skp-input' + showErr(nameOk)} value={form.name} placeholder="Jan Novák"
               onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            {touched && !nameOk && <span className="skp-err-msg">Zadejte jméno (alespoň 2 znaky).</span>}
           </div>
           <div className="skp-field">
             <label>E-mail <span className="req">*</span></label>
@@ -296,15 +309,29 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
             {touched && !emailOk && <span className="skp-err-msg">Zadejte platný e-mail.</span>}
           </div>
           <div className="skp-field">
-            <label>Telefon <span className="req">*</span></label>
+            <label>Telefon <span style={{ color: 'var(--sk-mute)', fontWeight: 400 }}>(nepovinné)</span></label>
             <input className={'skp-input' + showErr(phoneOk)} value={form.phone} placeholder="+420 777 123 456"
               onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+            {touched && !phoneOk && form.phone.trim().length > 0 && <span className="skp-err-msg">Zadejte platné tel. číslo (min. 9 číslic).</span>}
           </div>
           <div className="skp-field full">
             <label>Poznámka <span style={{ color: 'var(--sk-mute)', fontWeight: 400 }}>(nepovinné)</span></label>
             <textarea className="skp-input" value={form.note}
               placeholder={mode === 'tenis' ? 'Např. půjčení vybavení, počet hráčů…' : 'Např. první návštěva, potřebuji instruktora…'}
               onChange={(e) => setForm({ ...form, note: e.target.value })} />
+          </div>
+          <div className="skp-field full">
+            <label>Způsob platby <span className="req">*</span></label>
+            <div className="skp-payment">
+              <label>
+                <input type="radio" name="payment" value="hotove" checked={form.payment === 'hotove'} onChange={() => setForm({ ...form, payment: 'hotove' })} />
+                <span><strong>Hotově</strong>Při převzetí klíčů u správce</span>
+              </label>
+              <label>
+                <input type="radio" name="payment" value="prevod" checked={form.payment === 'prevod'} onChange={() => setForm({ ...form, payment: 'prevod' })} />
+                <span><strong>Převodem</strong>Na bankovní účet předem</span>
+              </label>
+            </div>
           </div>
           <label className="skp-check full">
             <input type="checkbox" checked={form.agree} onChange={(e) => setForm({ ...form, agree: e.target.checked })} />
@@ -322,7 +349,6 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
             <div className="lbl">Termín</div>
             <button className="skp-edit" onClick={() => goStep(1)}>Změnit</button>
           </div>
-          <div className="kv"><span className="k">{mode === 'tenis' ? 'Kurt' : 'Posilovna'}</span><span className="v">{cfg.courtShort}</span></div>
           <div className="kv"><span className="k">Datum</span><span className="v">{DOW[selDate!.getDay()]} {fmtDMY(selDate!)}</span></div>
           <div className="kv"><span className="k">Čas</span><span className="v">{timeLabel} · {hoursCount} h</span></div>
         </div>
@@ -333,13 +359,17 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
           </div>
           <div className="kv"><span className="k">Jméno</span><span className="v">{form.name}</span></div>
           <div className="kv"><span className="k">E-mail</span><span className="v">{form.email}</span></div>
-          <div className="kv"><span className="k">Telefon</span><span className="v">{form.phone}</span></div>
+          {form.phone.trim() && <div className="kv"><span className="k">Telefon</span><span className="v">{form.phone}</span></div>}
           {form.note && <div className="kv"><span className="k">Poznámka</span><span className="v" style={{ maxWidth: 260, textAlign: 'right', fontWeight: 400 }}>{form.note}</span></div>}
         </div>
         <div className="skp-review-sec">
           <div className="lbl">Platba</div>
-          <div className="kv"><span className="k">Celkem k úhradě na místě</span><span className="v" style={{ fontSize: 18 }}>{total} Kč</span></div>
-          <p style={{ fontSize: 13, color: 'var(--sk-mute)', margin: '8px 0 0', lineHeight: 1.5 }}>Platí se hotově nebo kartou u správce. Storno zdarma do 24 hodin před začátkem.</p>
+          <div className="kv">
+            <span className="k">Způsob platby</span>
+            <span className="v">{form.payment === 'hotove' ? 'Hotově u správce' : 'Převodem na účet'}</span>
+          </div>
+          <div className="kv"><span className="k">Celkem k úhradě</span><span className="v" style={{ fontSize: 18 }}>{total} Kč</span></div>
+          <p style={{ fontSize: 13, color: 'var(--sk-mute)', margin: '8px 0 0', lineHeight: 1.5 }}>Rezervaci lze kdykoliv zdarma zrušit kliknutím na odkaz v potvrzovacím e-mailu.</p>
         </div>
       </div>
     );
