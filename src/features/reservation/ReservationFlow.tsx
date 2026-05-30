@@ -183,7 +183,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
           </button>
         )}
         {step === 2 && (
-          <button className="skp-btn-primary" disabled={!formOk} onClick={() => { setTouched(true); if (formOk) goStep(3); }}>
+          <button className="skp-btn-primary" onClick={() => { setTouched(true); if (formOk) goStep(3); }}>
             Pokračovat <Icon.arrowR size={18} />
           </button>
         )}
