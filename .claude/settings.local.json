@@ -22,7 +22,12 @@
       "mcp__playwright__browser_close",
       "Bash(taskkill /F /IM chrome.exe)",
       "Bash(taskkill /F /IM msedge.exe)",
-      "mcp__playwright__browser_type"
+      "mcp__playwright__browser_type",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/)",
+      "mcp__playwright__browser_resize",
+      "Bash(git push *)",
+      "Bash(Start-Sleep -Seconds 3)",
+      "Bash(Get-Content \"C:\\\\Users\\\\web\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-web-Documents-github-com-web-sokol-kramolna\\\\fb108953-a1e7-471f-83f3-6c039177cf2f\\\\tasks\\\\bi3ncmao3.output\" -Tail 10)"
     ]
   }
 }

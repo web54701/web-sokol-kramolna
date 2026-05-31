@@ -14,7 +14,7 @@ export function HomePage({ onNavigate }: Props) {
 
       <div className="skp-home-scroll">
         <div className="skp-home-hero">
-          <img src="/hero.png" alt="Antukový tenisový kurt" />
+          <img src="/hero.webp" alt="Antukový tenisový kurt" />
           <div className="skp-home-hero-scrim" />
           <div className="skp-home-hero-text">
             <h1>Sokol Kramolna</h1>
@@ -27,7 +27,7 @@ export function HomePage({ onNavigate }: Props) {
 
         <div className="skp-home-cards">
           <div className="sk-action-card is-green" onClick={() => onNavigate('tenis')}>
-            <div className="sk-action-icon"><Icon.racket size={68} /></div>
+            <div className="sk-action-icon"><img src="/raketa.webp" alt="" /></div>
             <div className="sk-action-body">
               <div className="sk-action-title">Tenis</div>
               <div className="sk-action-sub">Rezervace kurtu<br />a ceník</div>
@@ -36,7 +36,7 @@ export function HomePage({ onNavigate }: Props) {
           </div>
 
           <div className="sk-action-card is-rust" onClick={() => onNavigate('gym')}>
-            <div className="sk-action-icon"><Icon.dumbbell size={68} /></div>
+            <div className="sk-action-icon"><img src="/cinka.webp" alt="" /></div>
             <div className="sk-action-body">
               <div className="sk-action-title">Posilovna</div>
               <div className="sk-action-sub">Rezervace vstupu<br />a ceník</div>
