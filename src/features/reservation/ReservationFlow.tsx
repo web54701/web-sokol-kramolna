@@ -9,7 +9,7 @@ type Props = {
 };
 
 type SelState = { dayNo: number | null; slots: number[] };
-type FormState = { name: string; email: string; phone: string; note: string; agree: boolean; payment: 'hotove' | 'prevod' };
+type FormState = { name: string; email: string; phone: string; note: string; payment: 'hotove' | 'prevod' };
 
 const MOB_DAYS = 3;
 const MOB_BP = 640;
@@ -22,7 +22,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
   const [dayOff, setDayOff] = useState(0);
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= MOB_BP);
   const [sel, setSel] = useState<SelState>({ dayNo: null, slots: [] });
-  const [form, setForm] = useState<FormState>({ name: '', email: '', phone: '', note: '', agree: false, payment: 'hotove' });
+  const [form, setForm] = useState<FormState>({ name: '', email: '', phone: '', note: '', payment: 'hotove' });
   const [touched, setTouched] = useState(false);
   const [showRules, setShowRules] = useState(false);
 
@@ -103,7 +103,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
   const emailOk = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email.trim());
   const nameOk = form.name.trim().length >= 2;
   const phoneOk = form.phone.trim().length === 0 || form.phone.replace(/\s/g, '').length >= 9;
-  const formOk = nameOk && emailOk && phoneOk && form.agree;
+  const formOk = nameOk && emailOk && phoneOk;
 
   function submit() {
     setStep(4);
@@ -113,7 +113,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
   function reset() {
     setStep(1);
     setSel({ dayNo: null, slots: [] });
-    setForm({ name: '', email: '', phone: '', note: '', agree: false, payment: 'hotove' });
+    setForm({ name: '', email: '', phone: '', note: '', payment: 'hotove' });
     setTouched(false);
     window.scrollTo(0, 0);
   }
@@ -157,7 +157,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
             <div className="row"><span className="k">Termín</span><span className="v">{DOW[selDate!.getDay()]} {fmtDMY(selDate!)}</span></div>
             <div className="row"><span className="k">Čas</span><span className="v">{timeLabel} · {hoursCount} h</span></div>
             <div className="row"><span className="k">Jméno</span><span className="v">{form.name}</span></div>
-            <div className="row"><span className="k">Platba</span><span className="v">{form.payment === 'hotove' ? 'Hotově' : 'Převodem'}</span></div>
+            <div className="row"><span className="k">Platba</span><span className="v">{form.payment === 'hotove' ? 'Osobně při vrácení klíčů' : 'Převodem na účet Sokola'}</span></div>
             <div className="row"><span className="k">Celkem</span><span className="v" style={{ fontSize: 16 }}>{total} Kč</span></div>
           </div>
 
@@ -185,7 +185,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
           <div className="skp-sum-row"><span className="k">Datum</span><span className="v">{DOW[selDate!.getDay()]} {fmtDM(selDate!)}</span></div>
           <div className="skp-sum-row"><span className="k">Čas</span><span className="v">{timeLabel}</span></div>
           <div className="skp-sum-row"><span className="k">Délka</span><span className="v">{hoursCount} {hoursCount === 1 ? 'hodina' : hoursCount < 5 ? 'hodiny' : 'hodin'}</span></div>
-          <div className="skp-sum-row"><span className="k">Sazba</span><span className="v">{mode === 'tenis' ? (cfg.priceFor(selDate!, sortedSlots[0]) === 220 ? 'Špička / víkend' : 'Mimo špičku') : 'Jednorázový vstup'}</span></div>
+          <div className="skp-sum-row"><span className="k">Sazba</span><span className="v">{mode === 'tenis' ? '100 Kč / h' : 'Jednorázový vstup'}</span></div>
           <div className="skp-sum-total"><span className="k">Celkem</span><span className="v">{total} Kč</span></div>
         </>
       )}
@@ -204,7 +204,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
         )}
         {step === 3 && (
           <button className="skp-btn-primary" onClick={submit}>
-            Závazně rezervovat
+            Rezervovat
           </button>
         )}
       </div>
@@ -307,7 +307,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
                     key={d.getTime() + '-' + h}
                     className={cls}
                     onClick={() => clickSlot(d, h, info.st)}
-                    title={info.st === 'free' ? `${DOW[d.getDay()]} ${fmtDM(d)} · ${h}:00` : info.st === 'past' ? 'Již proběhlo' : (mode === 'gym' ? 'Plně obsazeno' : 'Obsazeno')}
+                    title={info.st === 'free' ? `${DOW[d.getDay()]} ${fmtDM(d)} ${h}:00 – ${h + 1}:00` : info.st === 'past' ? 'Již proběhlo' : (mode === 'gym' ? 'Plně obsazeno' : 'Obsazeno')}
                   >
                     {mode === 'gym' && (info.st === 'free' || info.st === 'full') && (
                       <span className="cap">{info.st === 'full' ? '0' : info.remaining}</span>
@@ -367,20 +367,18 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
             <div className="skp-payment">
               <label>
                 <input type="radio" name="payment" value="hotove" checked={form.payment === 'hotove'} onChange={() => setForm({ ...form, payment: 'hotove' })} />
-                <span><strong>Hotově</strong>Při převzetí klíčů u správce</span>
+                <span><strong>Osobně</strong>Při vrácení klíčů u správce</span>
               </label>
               <label>
                 <input type="radio" name="payment" value="prevod" checked={form.payment === 'prevod'} onChange={() => setForm({ ...form, payment: 'prevod' })} />
-                <span><strong>Převodem</strong>Na bankovní účet předem</span>
+                <span><strong>Převodem</strong>Na účet Sokola Kramolna</span>
               </label>
             </div>
           </div>
-          <div className="full" style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <label className="skp-check">
-              <input type="checkbox" checked={form.agree} onChange={(e) => setForm({ ...form, agree: e.target.checked })} />
-              <span>Souhlasím s <a onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowRules(true); }}>provozním řádem areálu</a> a se zpracováním údajů pro účely rezervace.</span>
-            </label>
-            {touched && !form.agree && <span className="skp-err-msg">Pro pokračování je nutný souhlas.</span>}
+          <div className="full">
+            <p className="skp-rules-notice">
+              Vstupem na kurt souhlasíte s <a onClick={(e) => { e.preventDefault(); setShowRules(true); }}>provozním řádem</a>.
+            </p>
           </div>
         </div>
       </div>
@@ -411,7 +409,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
           <div className="lbl">Platba</div>
           <div className="kv">
             <span className="k">Způsob platby</span>
-            <span className="v">{form.payment === 'hotove' ? 'Hotově u správce' : 'Převodem na účet'}</span>
+            <span className="v">{form.payment === 'hotove' ? 'Osobně při vrácení klíčů' : 'Převodem na účet Sokola'}</span>
           </div>
           <div className="kv"><span className="k">Celkem k úhradě</span><span className="v" style={{ fontSize: 18 }}>{total} Kč</span></div>
           <p style={{ fontSize: 13, color: 'var(--sk-mute)', margin: '8px 0 0', lineHeight: 1.5 }}>Rezervaci lze kdykoliv zdarma zrušit kliknutím na odkaz v potvrzovacím e-mailu.</p>
@@ -450,8 +448,8 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
         </ul>
         <p className="skp-modal-footer">Díky, že pomáháte udržovat kurt v super stavu! Hře zdar!</p>
         <div style={{ marginTop: 24 }}>
-          <button className="skp-btn-primary" style={{ maxWidth: 260 }} onClick={() => { setShowRules(false); setForm(f => ({ ...f, agree: true })); }}>
-            Souhlasím s provozním řádem
+          <button className="skp-btn-primary" style={{ maxWidth: 260 }} onClick={() => setShowRules(false)}>
+            Zavřít
           </button>
         </div>
       </div>

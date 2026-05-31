@@ -23,6 +23,7 @@ function loadState(): AppState {
 
 export default function App() {
   const [{ route, tenisTab, gymTab }, setState] = useState<AppState>(loadState);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     try { localStorage.setItem(LS_KEY, JSON.stringify({ route, tenisTab, gymTab })); } catch {}
@@ -31,14 +32,15 @@ export default function App() {
   const go = (r: Route) => setState((s) => ({ ...s, route: r }));
   const setTenisTab = (t: string) => setState((s) => ({ ...s, tenisTab: t }));
   const setGymTab = (t: string) => setState((s) => ({ ...s, gymTab: t }));
+  const activateAdmin = () => setIsAdmin(true);
 
   return (
     <>
-{route === 'home' && <HomePage onNavigate={go} />}
-      {route === 'tenis' && <ActivityPage mode="tenis" tab={tenisTab} setTab={setTenisTab} onNavigate={go} />}
-      {route === 'gym' && <ActivityPage mode="gym" tab={gymTab} setTab={setGymTab} onNavigate={go} />}
-      {route === 'onas' && <OnasPage onNavigate={go} />}
-      {route === 'kontakt' && <KontaktPage onNavigate={go} />}
+      {route === 'home' && <HomePage onNavigate={go} isAdmin={isAdmin} onAdminActivate={activateAdmin} />}
+      {route === 'tenis' && <ActivityPage mode="tenis" tab={tenisTab} setTab={setTenisTab} onNavigate={go} isAdmin={isAdmin} onAdminActivate={activateAdmin} />}
+      {route === 'gym' && <ActivityPage mode="gym" tab={gymTab} setTab={setGymTab} onNavigate={go} isAdmin={isAdmin} onAdminActivate={activateAdmin} />}
+      {route === 'onas' && <OnasPage onNavigate={go} isAdmin={isAdmin} onAdminActivate={activateAdmin} />}
+      {route === 'kontakt' && <KontaktPage onNavigate={go} isAdmin={isAdmin} onAdminActivate={activateAdmin} />}
     </>
   );
 }

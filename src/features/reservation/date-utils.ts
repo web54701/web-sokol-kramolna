@@ -1,6 +1,6 @@
 export const DOW = ['Ne', 'Po', 'Út', 'St', 'Čt', 'Pá', 'So'];
 export const DAY_MS = 86400000;
-export const epochDay = (d: Date): number => Math.floor(d.getTime() / DAY_MS);
+export const epochDay = (d: Date): number => Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / DAY_MS);
 export const fmtDM = (d: Date): string => `${d.getDate()}. ${d.getMonth() + 1}.`;
 export const fmtDMY = (d: Date): string => `${d.getDate()}. ${d.getMonth() + 1}. ${d.getFullYear()}`;
 export const HOURS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];

@@ -13,12 +13,7 @@ export const MODES: Record<ReservationModeKey, ReservationModeConfig> = {
     court: 'Kurt 1 · antuka',
     courtShort: 'Kurt 1',
     unit: 'kurtu',
-    priceFor: (date: Date, h: number) => {
-      const wd = date.getDay();
-      const weekend = wd === 0 || wd === 6;
-      if (weekend) return 220;
-      return h >= 16 ? 220 : 160;
-    },
+    priceFor: () => 100,
     capacity: null,
   },
   gym: {

@@ -2,6 +2,7 @@ import { Icon } from '../components/Icon';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import { ReservationFlow } from '../features/reservation/ReservationFlow';
+import { AdminView } from '../features/reservation/AdminView';
 import { ACT, type ActivityMode, type ActivityConfig } from '../data/activities';
 import type { Route } from '../types';
 
@@ -10,15 +11,17 @@ type Props = {
   tab: string;
   setTab: (tab: string) => void;
   onNavigate: (route: Route) => void;
+  isAdmin?: boolean;
+  onAdminActivate?: () => void;
 };
 
-export function ActivityPage({ mode, tab, setTab, onNavigate }: Props) {
+export function ActivityPage({ mode, tab, setTab, onNavigate, isAdmin, onAdminActivate }: Props) {
   const cfg = ACT[mode];
-  const tabs = ['Přehled', 'Ceník', cfg.resvTab];
+  const tabs = ['Přehled', 'Ceník', cfg.resvTab, ...(isAdmin ? ['Správa'] : [])];
 
   return (
     <div className="sk-page skp-page">
-      <Header active={cfg.nav} onNavigate={onNavigate} />
+      <Header active={cfg.nav} onNavigate={onNavigate} isAdmin={isAdmin} onAdminActivate={onAdminActivate} />
 
       <div className="sk-pagewrap">
         <div className="sk-pagehead">
@@ -36,6 +39,7 @@ export function ActivityPage({ mode, tab, setTab, onNavigate }: Props) {
         {tab === 'Přehled' && <ActivityOverview cfg={cfg} onReserve={() => setTab(cfg.resvTab)} />}
         {tab === 'Ceník' && <ActivityPricing cfg={cfg} onReserve={() => setTab(cfg.resvTab)} />}
         {tab === cfg.resvTab && <ReservationFlow mode={mode} onGoOverview={() => setTab('Přehled')} />}
+        {tab === 'Správa' && <AdminView mode={mode} />}
       </div>
 
       <Footer />

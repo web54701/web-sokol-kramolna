@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Icon } from './Icon';
 import type { Route } from '../types';
 
@@ -12,22 +12,36 @@ const NAV_ITEMS: { label: string; route: Route }[] = [
 type HeaderProps = {
   active: string | null;
   onNavigate: (route: Route) => void;
+  isAdmin?: boolean;
+  onAdminActivate?: () => void;
 };
 
-export function Header({ active, onNavigate }: HeaderProps) {
+export function Header({ active, onNavigate, isAdmin, onAdminActivate }: HeaderProps) {
   const [open, setOpen] = useState(false);
+  const tapTimes = useRef<number[]>([]);
 
   const go = (route: Route) => { setOpen(false); onNavigate(route); };
+
+  const handleLogoImgClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const now = Date.now();
+    tapTimes.current = [...tapTimes.current.filter(t => now - t < 2000), now];
+    if (tapTimes.current.length >= 5) {
+      tapTimes.current = [];
+      onAdminActivate?.();
+    }
+  };
 
   return (
     <>
       <header className="sk-header">
         <div className="sk-logo" onClick={() => go('home')} aria-label="Sokol Kramolna">
-          <img src="/logo_sokol.png" alt="" className="sk-logo-img" />
+          <img src="/logo_sokol.png" alt="" className="sk-logo-img" onClick={handleLogoImgClick} />
           <div className="sk-logo-text">
             <span>SOKOL</span>
             <span>KRAMOLNA</span>
           </div>
+          {isAdmin && <span className="sk-admin-chip"><Icon.shield size={11} /> Správce</span>}
         </div>
         <nav className="sk-nav">
           {NAV_ITEMS.map((it) => (

@@ -36,7 +36,7 @@ export const ACT: Record<ActivityMode, ActivityConfig> = {
     stats: [
       { v: '1', k: 'Antukový kurt' },
       { v: 'duben–říjen', k: 'Sezóna' },
-      { v: 'od 160', k: 'Kč / hodina' },
+      { v: '100', k: 'Kč / hodina' },
     ],
     ctaLabel: 'Rezervovat kurt',
     rules: [
@@ -54,12 +54,11 @@ export const ACT: Record<ActivityMode, ActivityConfig> = {
     hoursNote: 'Kurt je v provozu od dubna do října. Mimo sezónu se nehraje.',
     price: {
       rows: [
-        { lbl: 'Mimo špičku', sub: 'Po–Pá 8:00–16:00', val: '160 Kč' },
-        { lbl: 'Špička', sub: 'Po–Pá 16:00–21:00', val: '220 Kč' },
-        { lbl: 'Víkend a svátky', sub: 'So–Ne celý den', val: '220 Kč' },
+        { lbl: 'Nečlenové', sub: 'Hodinový pronájem kurtu', val: '100 Kč' },
+        { lbl: 'Členové Sokola', sub: 'Měsíční paušál, neomezené hraní', val: '100 Kč / měsíc' },
       ],
-      noteTitle: 'Co je v ceně',
-      note: 'Cena je za hodinu hry na celém kurtu bez ohledu na počet hráčů — ať přijdou dva nebo čtyři, platí se stejně. Platí se osobně při vrácení klíčů. Členové Sokola Kramolna mají 20 % slevu po přihlášení.',
+      noteTitle: 'Jak zaplatit',
+      note: 'Cena je za celý kurt bez ohledu na počet hráčů — ať přijdou dva nebo čtyři, platí se stejně. Zaplatit lze osobně při vrácení klíčů nebo převodem na účet Sokola Kramolna.',
     },
   },
   gym: {

@@ -3,7 +3,7 @@ import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import type { Route } from '../types';
 
-type Props = { onNavigate: (route: Route) => void };
+type Props = { onNavigate: (route: Route) => void; isAdmin?: boolean; onAdminActivate?: () => void };
 
 const timeline = [
   { y: '1862', t: 'Vznik Sokola', d: 'Tělocvičnou jednotu Sokol Pražský zakládají Miroslav Tyrš a Jindřich Fügner. Začíná tradice českého spolkového cvičení.' },
@@ -19,10 +19,10 @@ const values = [
   { ic: <Icon.clock />, t: 'Tradice i dnešek', d: 'Hlásíme se k hodnotám Sokola „Tužme se" a otevíráme je dnešní době.' },
 ];
 
-export function OnasPage({ onNavigate }: Props) {
+export function OnasPage({ onNavigate, isAdmin, onAdminActivate }: Props) {
   return (
     <div className="sk-page skp-page">
-      <Header active="O nás" onNavigate={onNavigate} />
+      <Header active="O nás" onNavigate={onNavigate} isAdmin={isAdmin} onAdminActivate={onAdminActivate} />
 
       <div className="sk-pagewrap">
         <div className="sk-pagehead">

@@ -3,7 +3,7 @@ import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import type { Route } from '../types';
 
-type Props = { onNavigate: (route: Route) => void };
+type Props = { onNavigate: (route: Route) => void; isAdmin?: boolean; onAdminActivate?: () => void };
 
 const DOW_FULL = ['Neděle', 'Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek', 'Sobota'];
 
@@ -14,7 +14,7 @@ const HOURS_ROWS: HoursRow[] = [
   { label: 'Sobota – Neděle', time: '9:00 – 20:00', isWeekend: true },
 ];
 
-export function KontaktPage({ onNavigate }: Props) {
+export function KontaktPage({ onNavigate, isAdmin, onAdminActivate }: Props) {
   const today = new Date();
   const dayOfWeek = today.getDay();
   const isWeekendToday = dayOfWeek === 0 || dayOfWeek === 6;
@@ -22,7 +22,7 @@ export function KontaktPage({ onNavigate }: Props) {
 
   return (
     <div className="sk-page skp-page">
-      <Header active="Kontakt" onNavigate={onNavigate} />
+      <Header active="Kontakt" onNavigate={onNavigate} isAdmin={isAdmin} onAdminActivate={onAdminActivate} />
 
       <div className="sk-pagewrap">
         <div className="sk-pagehead">
@@ -40,7 +40,7 @@ export function KontaktPage({ onNavigate }: Props) {
                 <div>
                   <div className="lbl">Adresa</div>
                   <div className="big">T.J. Sokol Kramolna</div>
-                  <div className="small">Kramolna 76<br />547 01 Náchod<br />Královéhradecký kraj</div>
+                  <div className="small">Kramolna 85<br />547 01 Kramolna<br />Královéhradecký kraj</div>
                 </div>
               </div>
               <div className="skp-contact-card">
@@ -81,10 +81,13 @@ export function KontaktPage({ onNavigate }: Props) {
             </div>
 
             <div className="skp-map">
-              <KramolnaMap />
-              <div className="pin"><Icon.pin size={40} /></div>
-              <div className="pin-label">Sokol Kramolna</div>
-              <div className="maptag">Kramolna · okres Náchod</div>
+              <iframe
+                src="https://mapy.com/s/hevufegega"
+                width="400"
+                height="280"
+                style={{ border: 'none', width: '100%', height: '100%', display: 'block' }}
+                title="Mapa — Sokol Kramolna"
+              />
             </div>
           </div>
         </div>
@@ -92,25 +95,5 @@ export function KontaktPage({ onNavigate }: Props) {
 
       <Footer />
     </div>
-  );
-}
-
-function KramolnaMap() {
-  return (
-    <svg viewBox="0 0 600 460" preserveAspectRatio="xMidYMid slice">
-      <rect width="600" height="460" fill="#e9e3d4" />
-      <path d="M0 0h220v150q-120 30-220 10z" fill="#cdd9c2" />
-      <path d="M600 300v160H360q40-120 240-160z" fill="#cdd9c2" />
-      <circle cx="90" cy="380" r="80" fill="#d3ddc8" />
-      <path d="M-20 90 Q180 160 300 130 T640 210" fill="none" stroke="#bcd0d6" strokeWidth="12" opacity="0.8" />
-      <path d="M-20 250 Q200 230 300 250 T640 240" fill="none" stroke="#fff" strokeWidth="10" />
-      <path d="M300 -20 L300 250 L420 480" fill="none" stroke="#fff" strokeWidth="8" />
-      <path d="M120 480 L260 250" fill="none" stroke="#fff" strokeWidth="6" />
-      <g fill="#d8cfba">
-        <rect x="250" y="200" width="26" height="20" /><rect x="284" y="196" width="22" height="18" />
-        <rect x="318" y="262" width="24" height="20" /><rect x="280" y="270" width="26" height="18" />
-        <rect x="232" y="258" width="20" height="18" /><rect x="340" y="218" width="22" height="16" />
-      </g>
-    </svg>
   );
 }
