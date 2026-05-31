@@ -28,28 +28,30 @@ export const ACT: Record<ActivityMode, ActivityConfig> = {
   tenis: {
     nav: 'Tenis',
     title: 'Tenis',
-    intro: 'Jeden antukový kurt v klidném prostředí areálu. Rezervace online v hodinových blocích — jednoduše, bez registrace.',
+    intro: 'Jeden antukový kurt v klidném prostředí areálu, v provozu od dubna do října. Rezervace online v hodinových blocích — jednoduše, bez registrace.',
     resvTab: 'Rezervace kurtu',
     heroEyebrow: 'Antukový kurt · Sokol Kramolna',
     heroTitle: 'Zahrajte si na našem kurtu',
-    heroText: 'Udržovaná antuka, osvětlení pro hru do večera a online rezervace na pár kliknutí. K dispozici je jeden kurt — proto doporučujeme rezervovat předem.',
+    heroText: 'Udržovaná antuka částečně stíněná vzrostlými lípami — příjemný chládek i v letních vedrech. Jeden kurt na celý areál, rezervace online za pár kliknutí.',
     stats: [
       { v: '1', k: 'Antukový kurt' },
-      { v: '8–21', k: 'Otevřeno denně' },
+      { v: 'duben–říjen', k: 'Sezóna' },
       { v: 'od 160', k: 'Kč / hodina' },
     ],
     ctaLabel: 'Rezervovat kurt',
     rules: [
-      'Rezervovat lze nejdříve 21 dní a nejpozději 1 hodinu předem.',
+      'Rezervovat lze až 21 dní dopředu — nejzazší lhůtu nehlídáme, klidně i těsně před hrou.',
       'Hodinové bloky lze spojit do delší hry.',
-      'Storno zdarma nejpozději 24 hodin před začátkem.',
-      'Při dešti správce kurt uzavře a rezervaci bezplatně zruší.',
+      'Storno zdarma kdykoliv.',
+      'Klíče vyzvedněte u p. Mikšíčka (Kramolna 279) nejdříve 15 minut před začátkem; po hře je vraťte na stejné místo a uhraďte pronájem osobně.',
+      'Po hře prosíme o úklid kurtu — lajnovačka, vlečka na antuky a hadice jsou připraveny u kurtu.',
+      'Hraje se za přirozeného denního světla — kurt osvětlení nemá.',
     ],
     hours: [
       ['Pondělí – Pátek', '8:00 – 21:00'],
       ['Sobota – Neděle', '9:00 – 20:00'],
     ],
-    hoursNote: 'V hlavní sezóně (květen–září). Mimo sezónu dle dohody se správcem.',
+    hoursNote: 'Kurt je v provozu od dubna do října. Mimo sezónu se nehraje.',
     price: {
       rows: [
         { lbl: 'Mimo špičku', sub: 'Po–Pá 8:00–16:00', val: '160 Kč' },
@@ -57,7 +59,7 @@ export const ACT: Record<ActivityMode, ActivityConfig> = {
         { lbl: 'Víkend a svátky', sub: 'So–Ne celý den', val: '220 Kč' },
       ],
       noteTitle: 'Co je v ceně',
-      note: 'Cena je za hodinu hry na celém kurtu, bez ohledu na počet hráčů. Síť a značení jsou připravené. Členové Sokola Kramolna mají 20 % slevu po přihlášení.',
+      note: 'Cena je za hodinu hry na celém kurtu bez ohledu na počet hráčů — ať přijdou dva nebo čtyři, platí se stejně. Platí se osobně při vrácení klíčů. Členové Sokola Kramolna mají 20 % slevu po přihlášení.',
     },
   },
   gym: {

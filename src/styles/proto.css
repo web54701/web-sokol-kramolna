@@ -445,9 +445,9 @@ textarea.skp-input { height: 80px; padding-top: 11px; resize: none; }
 .skp-home-hero-scrim {
   position: absolute; inset: 0; z-index: 1; pointer-events: none;
   background: linear-gradient(100deg,
-    rgba(243,236,220,0.72) 0%,
-    rgba(243,236,220,0.32) 36%,
-    rgba(243,236,220,0.0) 62%);
+    rgba(14,38,28,0.55) 0%,
+    rgba(14,38,28,0.22) 45%,
+    rgba(14,38,28,0.0) 72%);
 }
 .skp-home-hero-placeholder {
   position: absolute; inset: 0; z-index: 0;
@@ -470,14 +470,16 @@ textarea.skp-input { height: 80px; padding-top: 11px; resize: none; }
   font-size: clamp(44px, 5.6vw, 76px);
   line-height: 0.95;
   letter-spacing: -0.025em;
-  color: var(--sk-green-800);
+  color: var(--sk-cream-50);
+  text-shadow: 0 2px 16px rgba(14, 38, 28, 0.55);
   white-space: nowrap;
 }
 .skp-home-hero-text p {
   margin: 18px 0 0;
   font-size: 18px;
   line-height: 1.4;
-  color: var(--sk-ink-soft);
+  color: var(--sk-cream-100);
+  text-shadow: 0 1px 8px rgba(14, 38, 28, 0.45);
   max-width: 360px;
 }
 
@@ -636,11 +638,12 @@ textarea.skp-input { height: 80px; padding-top: 11px; resize: none; }
   .skp-home-hero-text p { font-size: 13px; max-width: 190px; margin-top: 8px; }
 
   .skp-home-cards { margin: -24px 16px 0; flex-direction: column; gap: 10px; max-width: none; }
-  .skp-home-cards .sk-action-card { min-height: 100px; padding: 16px 18px 14px; }
-  .sk-action-icon { width: 44px; height: 44px; left: 16px; top: 14px; }
-  .sk-action-body { margin-left: 66px; }
-  .sk-action-title { font-size: 20px; margin: 2px 0 4px; }
-  .sk-action-sub { font-size: 12px; }
+  .skp-home-cards .sk-action-card { min-height: 150px; padding: 22px 20px 18px; }
+  .sk-action-icon { width: 64px; height: 64px; left: 20px; overflow: hidden; }
+  .sk-action-icon img { width: 100%; height: 100%; object-fit: contain; }
+  .sk-action-body { margin-left: 106px; }
+  .sk-action-title { font-size: 24px; margin: 2px 0 5px; }
+  .sk-action-sub { font-size: 13px; }
   .sk-action-cta { font-size: 11px; padding-top: 10px; }
 
   .skp-home .skp-info-row { margin: 10px 0 16px; border-radius: 0; border-left: 0; border-right: 0; }
