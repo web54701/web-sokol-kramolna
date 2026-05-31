@@ -408,3 +408,108 @@
 }
 .sk-info-col ul { list-style: none; padding: 0; }
 .sk-info-col .k { font-weight: 600; color: var(--sk-green-800); display: inline-block; min-width: 64px; }
+
+/* ---------- Hamburger (hidden on desktop) ---------- */
+.sk-mob-btn { display: none; }
+.sk-mob-overlay { display: none; }
+
+/* ========== MOBILNÍ LAYOUT (max 640 px) ========== */
+@media (max-width: 640px) {
+
+  /* --- Header --- */
+  .sk-header { padding: 0 16px; gap: 0; }
+  .sk-nav { display: none; }
+  .sk-mob-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    background: none;
+    border: 0;
+    color: var(--sk-cream-50);
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 8px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .sk-mob-btn:hover { background: rgba(255,255,255,0.10); }
+
+  /* Mobile nav overlay — z-index 99 (below sticky header at 100) */
+  .sk-mob-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 99;
+    background: rgba(14, 38, 30, 0.50);
+  }
+  .sk-mob-nav {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    background: var(--sk-green-800);
+    padding-top: 76px; /* push below sticky header */
+    display: flex;
+    flex-direction: column;
+    border-bottom: 2px solid rgba(255,255,255,0.08);
+  }
+  .sk-mob-navlink {
+    display: block;
+    padding: 18px 24px;
+    font-size: 19px;
+    font-weight: 600;
+    color: var(--sk-cream-50);
+    cursor: pointer;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+    letter-spacing: 0.01em;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .sk-mob-navlink.is-active { color: var(--sk-gold); }
+  .sk-mob-navlink:active { background: rgba(255,255,255,0.06); }
+
+  /* --- Footer --- */
+  .sk-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 18px 16px;
+    gap: 10px;
+  }
+  .sk-footer .sk-footer-links { margin-left: 0; gap: 18px; flex-wrap: wrap; }
+
+  /* --- Generic page --- */
+  .sk-pagewrap { padding: 20px 16px 20px; gap: 16px; }
+
+  .sk-pagehead {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .sk-pagehead-l h1 { font-size: 38px; }
+  .sk-pagehead-l p { font-size: 15px; }
+
+  .sk-subnav {
+    gap: 18px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+  .sk-subnav::-webkit-scrollbar { display: none; }
+
+  /* Info row — 2-sloupcový grid místo 4 */
+  .sk-info-row {
+    padding: 20px 16px;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+  }
+
+  /* Calendar */
+  .sk-cal-panel { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .sk-cal-grid {
+    min-width: 500px;
+    grid-template-columns: 40px repeat(7, 1fr);
+  }
+  .sk-cal-time { padding: 0 6px 0 0; font-size: 11px; }
+  .sk-cal-headrow { font-size: 11px; padding: 6px 2px; }
+
+}
+

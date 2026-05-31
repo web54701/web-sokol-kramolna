@@ -482,3 +482,95 @@ textarea.skp-input { height: 80px; padding-top: 11px; resize: none; }
 .skp-home .skp-info-row .sk-info-col:first-child {
   border-left: 0;
 }
+
+/* ========== MOBILNÍ OVERRIDES (max 640 px) ========== */
+@media (max-width: 640px) {
+
+  /* --- Přehled aktivity --- */
+  .skp-overview { grid-template-columns: 1fr; }
+  .skp-hero-card h2 { font-size: 28px; }
+  .skp-hero-stats .s .v { font-size: 24px; }
+
+  /* --- Ceník --- */
+  .skp-cenik-grid { grid-template-columns: 1fr; }
+
+  /* --- Rezervace: stepper --- */
+  .skp-stepper { gap: 0; }
+  .skp-step { font-size: 11px; gap: 4px; }
+  .skp-step .num { width: 26px; height: 26px; font-size: 12px; }
+  .skp-step-line { margin: 0 4px; min-width: 14px; }
+
+  /* --- Rezervace: layout --- */
+  .skp-resv { grid-template-columns: 1fr; }
+  .skp-summary { position: static; }
+
+  /* Week nav */
+  .skp-weeknav { flex-wrap: wrap; gap: 8px; }
+  .skp-weeknav .range { order: -1; width: 100%; }
+
+  /* --- Formulář (krok 2) --- */
+  .skp-form-grid { grid-template-columns: 1fr; }
+  .skp-payment { flex-direction: column; }
+
+  /* --- Modální okno --- */
+  .skp-modal-overlay { padding: 8px; align-items: flex-end; }
+  .skp-modal { padding: 22px 18px 28px; max-height: 90dvh; border-radius: 18px 18px 0 0; }
+
+  /* --- Výsledek rezervace --- */
+  .skp-success-card { padding: 20px 18px; }
+  .skp-success-head { flex-direction: column; gap: 10px; }
+  .skp-success-body { grid-template-columns: 1fr; }
+  .skp-code .val { font-size: 26px; }
+
+  /* --- O nás --- */
+  .skp-onas-lead { font-size: 19px; margin-bottom: 20px; }
+  .skp-onas-cols { grid-template-columns: 1fr; gap: 20px; }
+  .skp-values { grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* --- Kontakt --- */
+  .skp-contact-grid { grid-template-columns: 1fr; }
+  .skp-map { min-height: 260px; }
+
+  /* --- Úvodní stránka --- */
+  .skp-home-hero {
+    height: 54vw;
+    min-height: 220px;
+  }
+  .skp-home-hero-text {
+    left: 16px;
+    top: 18px;
+  }
+  .skp-home-hero-text h1 {
+    font-size: clamp(28px, 8.5vw, 46px);
+    white-space: normal;
+  }
+  .skp-home-hero-text p {
+    font-size: 14px;
+    max-width: 200px;
+    margin-top: 10px;
+  }
+
+  .skp-home-cards {
+    margin: -28px 16px 0;
+    flex-direction: column;
+    gap: 12px;
+    max-width: none;
+  }
+  .skp-home-cards .sk-action-card { min-height: 120px; }
+  .sk-action-icon { width: 52px; height: 52px; left: 18px; top: 18px; }
+  .sk-action-body { margin-left: 78px; }
+  .sk-action-title { font-size: 22px; }
+  .sk-action-sub { font-size: 13px; }
+
+  .skp-home .skp-info-row {
+    margin: 12px 0 20px;
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+  }
+  .skp-home .skp-info-row .sk-info-col {
+    padding: 2px 10px;
+  }
+
+}
+

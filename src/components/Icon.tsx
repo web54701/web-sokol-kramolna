@@ -63,4 +63,14 @@ export const Icon = {
       <path d="m3 7 9 6 9-6"/>
     </svg>
   ),
+  menu: ({ size = 22 }: IconProps) => (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 6h18M3 12h18M3 18h18"/>
+    </svg>
+  ),
+  close: ({ size = 22 }: IconProps) => (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 6 6 18M6 6l12 12"/>
+    </svg>
+  ),
 };
