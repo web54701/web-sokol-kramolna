@@ -657,9 +657,8 @@ textarea.skp-input { height: 80px; padding-top: 11px; resize: none; }
 }
 
 /* ---------- Admin view ---------- */
-.sk-admin-wrap {
-  padding: 0 0 32px;
-}
+.sk-admin-wrap { padding: 0 0 32px; }
+
 .sk-admin-bar {
   display: flex; align-items: center; justify-content: space-between;
   flex-wrap: wrap; gap: 10px;
@@ -669,9 +668,74 @@ textarea.skp-input { height: 80px; padding-top: 11px; resize: none; }
   display: inline-flex; align-items: center; gap: 8px;
   font-size: 15px; font-weight: 600; color: var(--text);
 }
-.sk-admin-nav {
-  display: flex; align-items: center; gap: 6px;
+.sk-admin-nav { display: flex; align-items: center; gap: 6px; }
+
+/* --- Kalendář --- */
+.sk-admin-cal-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 28px;
 }
+.sk-admin-cal-grid {
+  display: grid;
+  min-width: 560px;
+}
+.sk-admin-cal-corner {
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+}
+.sk-admin-cal-head {
+  padding: 0 6px;
+  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--sk-mute);
+  display: flex; align-items: center; justify-content: center;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  white-space: nowrap;
+}
+.sk-admin-cal-head.today { color: var(--sk-green-800); font-weight: 700; }
+.sk-admin-cal-time {
+  font-size: 11px; color: var(--sk-mute);
+  display: flex; align-items: center; justify-content: flex-end;
+  padding-right: 8px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+}
+.sk-admin-cal-cell {
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+  padding: 3px 5px;
+  transition: background .1s;
+}
+.sk-admin-cal-cell.booked {
+  background: color-mix(in srgb, var(--sk-green-800) 12%, transparent);
+  cursor: pointer;
+}
+.sk-admin-cal-cell.booked:hover {
+  background: color-mix(in srgb, var(--sk-green-800) 22%, transparent);
+}
+.sk-admin-cal-cell.past { opacity: 0.4; }
+.sk-admin-cal-cell.booked.past {
+  background: color-mix(in srgb, var(--sk-mute) 12%, transparent);
+  cursor: pointer;
+}
+.sk-admin-cal-name {
+  display: block;
+  font-size: 11px; font-weight: 600; line-height: 1.2;
+  color: var(--sk-green-800);
+  overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+}
+.sk-admin-cal-cell.past .sk-admin-cal-name { color: var(--sk-mute); }
+
+/* --- Nadpis sekce tabulky --- */
+.sk-admin-section-head {
+  font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em;
+  color: var(--sk-mute);
+  margin: 0 0 10px;
+}
+
+/* --- Tabulka --- */
 .sk-admin-table-wrap {
   overflow-x: auto;
   border: 1px solid var(--border);
@@ -686,7 +750,6 @@ textarea.skp-input { height: 80px; padding-top: 11px; resize: none; }
   text-align: left; font-weight: 600; font-size: 12px;
   text-transform: uppercase; letter-spacing: 0.06em;
   color: var(--sk-mute);
-  background: var(--sk-surface, var(--bg));
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
@@ -695,25 +758,63 @@ textarea.skp-input { height: 80px; padding-top: 11px; resize: none; }
   transition: background .1s;
 }
 .sk-admin-table tbody tr:last-child { border-bottom: 0; }
-.sk-admin-table tbody tr:hover { background: var(--sk-hover, color-mix(in srgb, var(--bg) 95%, var(--text))); }
+.sk-admin-table tbody tr:hover { background: color-mix(in srgb, var(--text) 4%, transparent); }
 .sk-admin-table tbody tr.past { opacity: 0.45; }
-.sk-admin-table td {
-  padding: 10px 14px;
-  vertical-align: middle;
-  white-space: nowrap;
-}
+.sk-admin-table td { padding: 10px 14px; vertical-align: middle; white-space: nowrap; }
 .sk-admin-td-date { font-weight: 500; }
 .sk-admin-td-time { font-family: "JetBrains Mono", monospace; font-size: 13px; color: var(--sk-mute); }
 .sk-admin-td-phone { font-family: "JetBrains Mono", monospace; font-size: 13px; }
 .sk-admin-link { color: var(--sk-green-800); text-decoration: none; }
 .sk-admin-link:hover { text-decoration: underline; }
-.sk-admin-empty {
-  padding: 40px 0; text-align: center;
-  color: var(--sk-mute); font-size: 15px;
-}
+.sk-admin-empty { padding: 40px 0; text-align: center; color: var(--sk-mute); font-size: 15px; }
 .sk-admin-note {
   display: flex; align-items: center; gap: 6px;
   margin-top: 14px;
   font-size: 12px; color: var(--sk-mute);
 }
+
+/* --- Popup kontaktu --- */
+.sk-admin-popup-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,.45);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+}
+.sk-admin-popup {
+  position: relative;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px 24px 20px;
+  min-width: 260px; max-width: 340px; width: 100%;
+  box-shadow: 0 8px 32px rgba(0,0,0,.18);
+}
+.sk-admin-popup-close {
+  position: absolute; top: 12px; right: 12px;
+  background: none; border: none; cursor: pointer;
+  color: var(--sk-mute); padding: 4px;
+  display: flex; align-items: center;
+  border-radius: 6px;
+  transition: background .1s;
+}
+.sk-admin-popup-close:hover { background: color-mix(in srgb, var(--text) 8%, transparent); }
+.sk-admin-popup-name {
+  font-size: 18px; font-weight: 700; margin-bottom: 4px;
+}
+.sk-admin-popup-when {
+  font-size: 13px; color: var(--sk-mute); margin-bottom: 16px;
+  font-family: "JetBrains Mono", monospace;
+}
+.sk-admin-popup-rows { display: flex; flex-direction: column; gap: 10px; }
+.sk-admin-popup-row {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 14px; color: var(--text);
+  text-decoration: none;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  transition: background .1s;
+}
+.sk-admin-popup-row:not(.muted):hover { background: color-mix(in srgb, var(--text) 5%, transparent); }
+.sk-admin-popup-row.muted { color: var(--sk-mute); cursor: default; }
 

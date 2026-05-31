@@ -32,7 +32,7 @@ export const ACT: Record<ActivityMode, ActivityConfig> = {
     resvTab: 'Rezervace kurtu',
     heroEyebrow: 'Antukový kurt · Sokol Kramolna',
     heroTitle: 'Zahrajte si na našem kurtu',
-    heroText: 'Udržovaná antuka částečně stíněná vzrostlými lípami — příjemný chládek i v letních vedrech. Jeden kurt na celý areál, rezervace online za pár kliknutí.',
+    heroText: 'Udržovaná antuka částečně stíněná vzrostlými lípami — příjemný chládek i v letních vedrech. Jeden kurt na celý areál, rezervace online na pár kliknutí.',
     stats: [
       { v: '1', k: 'Antukový kurt' },
       { v: 'duben–říjen', k: 'Sezóna' },
