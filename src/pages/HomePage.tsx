@@ -5,12 +5,14 @@ import type { Route } from '../types';
 
 type Props = {
   onNavigate: (route: Route) => void;
+  isAdmin?: boolean;
+  onAdminActivate?: () => void;
 };
 
-export function HomePage({ onNavigate }: Props) {
+export function HomePage({ onNavigate, isAdmin, onAdminActivate }: Props) {
   return (
     <div className="sk-page skp-home">
-      <Header active={null} onNavigate={onNavigate} />
+      <Header active={null} onNavigate={onNavigate} isAdmin={isAdmin} onAdminActivate={onAdminActivate} />
 
       <div className="skp-home-scroll">
         <div className="skp-home-hero">

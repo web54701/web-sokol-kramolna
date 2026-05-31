@@ -29,7 +29,12 @@ export default function App() {
     try { localStorage.setItem(LS_KEY, JSON.stringify({ route, tenisTab, gymTab })); } catch {}
   }, [route, tenisTab, gymTab]);
 
-  const go = (r: Route) => setState((s) => ({ ...s, route: r }));
+  const go = (r: Route) => setState((s) => ({
+    ...s,
+    route: r,
+    tenisTab: r === 'tenis' ? 'Přehled' : s.tenisTab,
+    gymTab: r === 'gym' ? 'Přehled' : s.gymTab,
+  }));
   const setTenisTab = (t: string) => setState((s) => ({ ...s, tenisTab: t }));
   const setGymTab = (t: string) => setState((s) => ({ ...s, gymTab: t }));
   const activateAdmin = () => setIsAdmin(true);
