@@ -24,7 +24,6 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
   const [sel, setSel] = useState<SelState>({ dayNo: null, slots: [] });
   const [form, setForm] = useState<FormState>({ name: '', email: '', phone: '', note: '', agree: false, payment: 'hotove' });
   const [touched, setTouched] = useState(false);
-  const [code, setCode] = useState('');
   const [showRules, setShowRules] = useState(false);
 
   useEffect(() => {
@@ -106,15 +105,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
   const phoneOk = form.phone.trim().length === 0 || form.phone.replace(/\s/g, '').length >= 9;
   const formOk = nameOk && emailOk && phoneOk && form.agree;
 
-  function genCode(): string {
-    const a = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    let s = '';
-    for (let i = 0; i < 5; i++) s += a[Math.floor(Math.random() * a.length)];
-    return `SK-${s}`;
-  }
-
   function submit() {
-    setCode(genCode());
     setStep(4);
     window.scrollTo(0, 0);
   }
@@ -124,7 +115,6 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
     setSel({ dayNo: null, slots: [] });
     setForm({ name: '', email: '', phone: '', note: '', agree: false, payment: 'hotove' });
     setTouched(false);
-    setCode('');
     window.scrollTo(0, 0);
   }
 
