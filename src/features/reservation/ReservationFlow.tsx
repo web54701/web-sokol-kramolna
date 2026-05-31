@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Icon } from '../../components/Icon';
 import { MODES, type ReservationModeKey } from './reservation.config';
 import { DOW, DAY_MS, epochDay, fmtDM, fmtDMY, seed, HOURS, weekStart } from './date-utils';
@@ -26,7 +26,6 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
   const [touched, setTouched] = useState(false);
   const [code, setCode] = useState('');
   const [showRules, setShowRules] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const mq = window.matchMedia(`(max-width: ${MOB_BP}px)`);
@@ -117,7 +116,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
   function submit() {
     setCode(genCode());
     setStep(4);
-    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+    window.scrollTo(0, 0);
   }
 
   function reset() {
@@ -126,11 +125,12 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
     setForm({ name: '', email: '', phone: '', note: '', agree: false, payment: 'hotove' });
     setTouched(false);
     setCode('');
+    window.scrollTo(0, 0);
   }
 
   function goStep(n: number) {
     setStep(n);
-    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+    window.scrollTo(0, 0);
   }
 
   // ---------- SUCCESS ----------
@@ -467,7 +467,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
 
   return (
     <>
-      <div ref={scrollRef} className="skp-scroll" style={{ paddingRight: 4 }}>
+      <div className="skp-scroll" style={{ paddingRight: 4 }}>
         <div style={{ marginBottom: 20 }}>{stepper}</div>
         <div className="skp-resv">
           <div className="skp-resv-main">{mainContent}</div>
