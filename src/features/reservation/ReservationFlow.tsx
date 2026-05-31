@@ -22,7 +22,15 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
   const [dayOff, setDayOff] = useState(0);
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= MOB_BP);
   const [sel, setSel] = useState<SelState>({ dayNo: null, slots: [] });
-  const [form, setForm] = useState<FormState>({ name: '', email: '', phone: '', note: '', payment: 'hotove' });
+  const [form, setForm] = useState<FormState>(() => {
+    try {
+      const saved = localStorage.getItem('skp-contact');
+      const c = saved ? JSON.parse(saved) : {};
+      return { name: c.name ?? '', email: c.email ?? '', phone: c.phone ?? '', note: '', payment: 'hotove' };
+    } catch {
+      return { name: '', email: '', phone: '', note: '', payment: 'hotove' };
+    }
+  });
   const [touched, setTouched] = useState(false);
   const [showRules, setShowRules] = useState(false);
 
@@ -106,6 +114,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
   const formOk = nameOk && emailOk && phoneOk;
 
   function submit() {
+    try { localStorage.setItem('skp-contact', JSON.stringify({ name: form.name, email: form.email, phone: form.phone })); } catch { /* ignore */ }
     setStep(4);
     window.scrollTo(0, 0);
   }
@@ -113,7 +122,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
   function reset() {
     setStep(1);
     setSel({ dayNo: null, slots: [] });
-    setForm({ name: '', email: '', phone: '', note: '', payment: 'hotove' });
+    setForm((f) => ({ name: f.name, email: f.email, phone: f.phone, note: '', payment: 'hotove' }));
     setTouched(false);
     window.scrollTo(0, 0);
   }
