@@ -446,15 +446,15 @@
     position: absolute;
     top: 0; left: 0; right: 0;
     background: var(--sk-green-800);
-    padding-top: 76px; /* push below sticky header */
+    padding-top: 76px;
     display: flex;
     flex-direction: column;
     border-bottom: 2px solid rgba(255,255,255,0.08);
   }
   .sk-mob-navlink {
     display: block;
-    padding: 18px 24px;
-    font-size: 19px;
+    padding: 14px 20px;
+    font-size: 17px;
     font-weight: 600;
     color: var(--sk-cream-50);
     cursor: pointer;
@@ -469,43 +469,64 @@
   .sk-footer {
     flex-direction: column;
     align-items: flex-start;
-    padding: 18px 16px;
-    gap: 10px;
+    padding: 14px 16px;
+    gap: 8px;
   }
-  .sk-footer .sk-footer-links { margin-left: 0; gap: 18px; flex-wrap: wrap; }
+  .sk-footer .sk-footer-links { margin-left: 0; gap: 16px; flex-wrap: wrap; font-size: 12px; }
+  .sk-footer { font-size: 12px; }
 
   /* --- Generic page --- */
-  .sk-pagewrap { padding: 20px 16px 20px; gap: 16px; }
+  .sk-pagewrap { padding: 14px 16px 16px; gap: 12px; }
 
   .sk-pagehead {
     flex-direction: column;
     align-items: flex-start;
-    gap: 12px;
+    gap: 8px;
   }
-  .sk-pagehead-l h1 { font-size: 38px; }
-  .sk-pagehead-l p { font-size: 15px; }
+  .sk-pagehead-l h1 { font-size: 30px; }
+  .sk-pagehead-l p { font-size: 14px; margin-top: 6px; }
 
   .sk-subnav {
-    gap: 18px;
+    gap: 16px;
+    font-size: 14px;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     white-space: nowrap;
-    padding-bottom: 4px;
+    padding-bottom: 2px;
     scrollbar-width: none;
   }
   .sk-subnav::-webkit-scrollbar { display: none; }
 
+  /* Card panels */
+  .sk-panel { padding: 14px 16px; }
+  .sk-panel h3 { font-size: 17px; margin-bottom: 10px; }
+
+  /* Price list rows */
+  .sk-pricelist .row { padding: 9px 10px; }
+
+  /* Rules list */
+  .sk-rules li { padding: 4px 0; }
+
+  /* Hours */
+  .sk-hours .row { padding: 4px 0; }
+
   /* Info row — 2-sloupcový grid místo 4 */
   .sk-info-row {
-    padding: 20px 16px;
+    padding: 14px 16px;
     grid-template-columns: 1fr 1fr;
-    gap: 18px;
+    gap: 14px;
   }
+  .sk-info-col h4 { font-size: 14px; margin-bottom: 4px; }
+  .sk-info-col p, .sk-info-col li { font-size: 13px; }
 
-  /* Calendar — grid-template-columns se nastavuje inline v TSX */
+  /* Calendar */
+  .sk-cal-panel { padding: 12px 14px; }
   .sk-cal-grid { grid-template-columns: unset; }
   .sk-cal-time { padding: 0 6px 0 0; font-size: 11px; }
-  .sk-cal-headrow { font-size: 11px; padding: 6px 2px; }
+  .sk-cal-headrow { font-size: 11px; padding: 5px 2px; }
+  .sk-cal-legend { gap: 14px; padding-top: 8px; font-size: 12px; }
+  .sk-cal-pill { height: 30px; font-size: 13px; padding: 0 10px; }
+  .sk-cal-pill.icon { width: 30px; padding: 0; }
 
 }
 

@@ -488,90 +488,136 @@ textarea.skp-input { height: 80px; padding-top: 11px; resize: none; }
 
   /* --- Přehled aktivity --- */
   .skp-overview { grid-template-columns: 1fr; }
-  .skp-hero-card h2 { font-size: 28px; }
-  .skp-hero-stats .s .v { font-size: 24px; }
+  .skp-hero-card { padding: 20px 20px; min-height: 220px; }
+  .skp-hero-card h2 { font-size: 26px; margin: 8px 0 10px; }
+  .skp-hero-card p { font-size: 14px; }
+  .skp-hero-stats { gap: 10px; padding-top: 16px; }
+  .skp-hero-stats .s .v { font-size: 22px; }
+  .skp-hero-stats .s .k { font-size: 11px; margin-top: 3px; }
+  .skp-hero-cta { height: 40px; padding: 0 16px; font-size: 14px; margin-top: 14px; }
 
   /* --- Ceník --- */
   .skp-cenik-grid { grid-template-columns: 1fr; }
+  .skp-price-big .row { padding: 11px 14px; }
+  .skp-note-card { padding: 14px 16px; font-size: 13px; }
+  .skp-note-card h4 { font-size: 15px; margin-bottom: 6px; }
 
   /* --- Rezervace: stepper --- */
-  .skp-stepper { gap: 0; }
+  .skp-stepper { gap: 0; margin-bottom: 2px; }
   .skp-step { font-size: 11px; gap: 4px; }
-  .skp-step .num { width: 26px; height: 26px; font-size: 12px; }
+  .skp-step .num { width: 24px; height: 24px; font-size: 11px; }
   .skp-step-line { margin: 0 4px; min-width: 14px; }
 
   /* --- Rezervace: layout --- */
-  .skp-resv { grid-template-columns: 1fr; }
+  .skp-resv { grid-template-columns: 1fr; gap: 12px; }
   .skp-resv-main { min-width: 0; }
-  .skp-summary { position: static; }
 
   /* Week nav */
-  .skp-weeknav { gap: 8px; }
-  .skp-weeknav .range { font-size: 14px; }
+  .skp-weeknav { gap: 6px; margin-bottom: 8px; }
+  .skp-weeknav .range { font-size: 13px; }
+
+  /* Cal tip */
+  .skp-cal-tip { margin-top: 6px; font-size: 12px; }
+
+  /* --- Souhrn rezervace --- */
+  .skp-summary {
+    position: static;
+    padding: 14px 16px;
+  }
+  .skp-summary h3 { font-size: 16px; margin-bottom: 2px; }
+  .skp-summary .sub { font-size: 12px; margin-bottom: 10px; }
+  .skp-sum-row { padding: 7px 0; font-size: 13px; }
+  .skp-sum-empty { padding: 12px 12px; font-size: 12px; }
+  .skp-sum-total { padding: 10px 0 2px; }
+  .skp-sum-total .k { font-size: 13px; }
+  .skp-sum-total .v { font-size: 22px; }
+  .skp-btn-row { margin-top: 10px; gap: 8px; }
+  .skp-btn-primary { height: 40px; font-size: 14px; border-radius: 9px; }
+  .skp-btn-ghost   { height: 40px; font-size: 14px; padding: 0 14px; border-radius: 9px; }
 
   /* --- Formulář (krok 2) --- */
-  .skp-form-grid { grid-template-columns: 1fr; }
-  .skp-payment { flex-direction: column; }
+  .skp-form-card { padding: 16px 16px; }
+  .skp-form-card h3 { font-size: 18px; margin-bottom: 2px; }
+  .skp-form-card .lead { font-size: 13px; margin-bottom: 14px; }
+  .skp-form-grid { grid-template-columns: 1fr; gap: 10px 0; }
+  .skp-field { gap: 4px; }
+  .skp-field label { font-size: 12px; }
+  .skp-input { height: 40px; font-size: 14px; }
+  textarea.skp-input { height: 68px; padding-top: 9px; }
+  .skp-payment { flex-direction: column; gap: 8px; }
+  .skp-payment > label { padding: 10px 12px; font-size: 13px; }
+  .skp-check { font-size: 12px; gap: 8px; }
+  .skp-check input { width: 15px; height: 15px; }
+  .skp-err-msg { font-size: 11px; }
+
+  /* --- Kontrola (krok 3) --- */
+  .skp-review-card { padding: 16px 16px; }
+  .skp-review-card h3 { font-size: 18px; margin-bottom: 12px; }
+  .skp-review-sec { padding: 10px 0; }
+  .skp-review-sec .lbl { font-size: 9px; margin-bottom: 6px; }
+  .skp-review-sec .kv { font-size: 13px; padding: 3px 0; }
 
   /* --- Modální okno --- */
   .skp-modal-overlay { padding: 8px; align-items: flex-end; }
-  .skp-modal { padding: 22px 18px 28px; max-height: 90dvh; border-radius: 18px 18px 0 0; }
+  .skp-modal { padding: 20px 16px 24px; max-height: 90dvh; border-radius: 18px 18px 0 0; }
+  .skp-modal h3 { font-size: 18px; }
+  .skp-modal h4 { font-size: 14px; margin: 14px 0 6px; }
+  .skp-modal p, .skp-modal li { font-size: 13px; }
 
   /* --- Výsledek rezervace --- */
-  .skp-success-card { padding: 20px 18px; }
-  .skp-success-head { flex-direction: column; gap: 10px; }
-  .skp-success-body { grid-template-columns: 1fr; }
-  .skp-code .val { font-size: 26px; }
+  .skp-success { padding: 16px 0; }
+  .skp-success-card { padding: 16px 16px; border-radius: 14px; }
+  .skp-success-head { flex-direction: row; gap: 12px; margin-bottom: 16px; }
+  .skp-success-badge { width: 44px; height: 44px; flex-shrink: 0; }
+  .skp-success-card h2 { font-size: 20px; margin: 0 0 4px; }
+  .skp-success-card .lead { font-size: 13px; }
+  .skp-success-body { grid-template-columns: 1fr; gap: 10px; }
+  .skp-code { padding: 14px 16px; border-radius: 10px; }
+  .skp-code .val { font-size: 24px; }
+  .skp-success-detail { padding: 10px 14px; border-radius: 10px; }
+  .skp-success-detail .row { font-size: 13px; padding: 5px 0; }
+  .skp-success-card .skp-btn-row { margin-top: 14px; }
 
   /* --- O nás --- */
-  .skp-onas-lead { font-size: 19px; margin-bottom: 20px; }
-  .skp-onas-cols { grid-template-columns: 1fr; gap: 20px; }
-  .skp-values { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .skp-onas-lead { font-size: 17px; margin-bottom: 16px; line-height: 1.45; }
+  .skp-onas-cols { grid-template-columns: 1fr; gap: 16px; }
+  .skp-onas-body p { font-size: 14px; line-height: 1.6; margin-bottom: 12px; }
+  .skp-values { grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+  .skp-value { padding: 14px 14px; border-radius: 10px; }
+  .skp-value .ic { width: 32px; height: 32px; margin-bottom: 8px; }
+  .skp-value .t { font-size: 15px; }
+  .skp-value .d { font-size: 12px; margin-top: 3px; }
+  .skp-timeline { gap: 0; }
+  .skp-tl-item { padding-bottom: 14px; gap: 12px; }
+  .skp-tl-year { width: 46px; height: 46px; font-size: 14px; }
+  .skp-tl-body .t { font-size: 14px; }
+  .skp-tl-body .d { font-size: 13px; margin-top: 2px; }
 
   /* --- Kontakt --- */
-  .skp-contact-grid { grid-template-columns: 1fr; }
-  .skp-map { min-height: 260px; }
+  .skp-contact-grid { grid-template-columns: 1fr; gap: 12px; }
+  .skp-contact-card { padding: 14px 16px; gap: 12px; border-radius: 12px; }
+  .skp-contact-card .ic { width: 36px; height: 36px; border-radius: 9px; }
+  .skp-contact-card .lbl { font-size: 9px; }
+  .skp-contact-card .big { font-size: 17px; margin-top: 2px; }
+  .skp-contact-card .small { font-size: 13px; }
+  .skp-map { min-height: 220px; border-radius: 12px; }
 
   /* --- Úvodní stránka --- */
-  .skp-home-hero {
-    height: 54vw;
-    min-height: 220px;
-  }
-  .skp-home-hero-text {
-    left: 16px;
-    top: 18px;
-  }
-  .skp-home-hero-text h1 {
-    font-size: clamp(28px, 8.5vw, 46px);
-    white-space: normal;
-  }
-  .skp-home-hero-text p {
-    font-size: 14px;
-    max-width: 200px;
-    margin-top: 10px;
-  }
+  .skp-home-hero { height: 50vw; min-height: 200px; }
+  .skp-home-hero-text { left: 16px; top: 16px; }
+  .skp-home-hero-text h1 { font-size: clamp(26px, 8vw, 44px); white-space: normal; }
+  .skp-home-hero-text p { font-size: 13px; max-width: 190px; margin-top: 8px; }
 
-  .skp-home-cards {
-    margin: -28px 16px 0;
-    flex-direction: column;
-    gap: 12px;
-    max-width: none;
-  }
-  .skp-home-cards .sk-action-card { min-height: 120px; }
-  .sk-action-icon { width: 52px; height: 52px; left: 18px; top: 18px; }
-  .sk-action-body { margin-left: 78px; }
-  .sk-action-title { font-size: 22px; }
-  .sk-action-sub { font-size: 13px; }
+  .skp-home-cards { margin: -24px 16px 0; flex-direction: column; gap: 10px; max-width: none; }
+  .skp-home-cards .sk-action-card { min-height: 100px; padding: 16px 18px 14px; }
+  .sk-action-icon { width: 44px; height: 44px; left: 16px; top: 14px; }
+  .sk-action-body { margin-left: 66px; }
+  .sk-action-title { font-size: 20px; margin: 2px 0 4px; }
+  .sk-action-sub { font-size: 12px; }
+  .sk-action-cta { font-size: 11px; padding-top: 10px; }
 
-  .skp-home .skp-info-row {
-    margin: 12px 0 20px;
-    border-radius: 0;
-    border-left: 0;
-    border-right: 0;
-  }
-  .skp-home .skp-info-row .sk-info-col {
-    padding: 2px 10px;
-  }
+  .skp-home .skp-info-row { margin: 10px 0 16px; border-radius: 0; border-left: 0; border-right: 0; }
+  .skp-home .skp-info-row .sk-info-col { padding: 2px 10px; }
 
 }
 
