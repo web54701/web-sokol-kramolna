@@ -98,7 +98,7 @@
   padding: 18px 56px;
   display: flex;
   align-items: center;
-  font-size: 13px;
+  font-size: 15px;
 }
 .sk-footer .sk-footer-links {
   margin-left: auto;
@@ -470,8 +470,8 @@
     padding: 14px 16px;
     gap: 8px;
   }
-  .sk-footer .sk-footer-links { margin-left: 0; gap: 16px; flex-wrap: wrap; font-size: 12px; }
-  .sk-footer { font-size: 12px; }
+  .sk-footer .sk-footer-links { margin-left: 0; gap: 16px; flex-wrap: wrap; font-size: 14px; }
+  .sk-footer { font-size: 14px; }
 
   /* --- Generic page --- */
   .sk-pagewrap { padding: 14px 16px 16px; gap: 12px; }

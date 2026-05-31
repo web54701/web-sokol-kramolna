@@ -48,7 +48,7 @@ export function HomePage({ onNavigate }: Props) {
         <section className="sk-info-row skp-info-row">
           <div className="sk-info-col">
             <h4><span className="sk-info-icon"><Icon.pin /></span> Kde nás najdete</h4>
-            <p>Kramolna 76<br />547 01 Náchod<br />okres Náchod</p>
+            <p>Kramolna 85<br />547 01 Kramolna<br />okres Náchod</p>
           </div>
           <div className="sk-info-col">
             <h4><span className="sk-info-icon"><Icon.phone /></span> Kontakt</h4>
