@@ -145,27 +145,30 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
               </svg>
             </div>
             <div>
-              <h2>Rezervace předběžně potvrzena</h2>
-              <p className="lead">Zaslali jsme vám potvrzovací kód na e-mail — rezervaci dokončíte nebo kdykoliv zdarma zrušíte kliknutím na odkaz v něm.</p>
+              <h2>Rezervace přijata</h2>
+              <p className="lead">Termín je předběžně zarezervován. Aby byla rezervace platná, je nutné ji potvrdit kliknutím na odkaz v e-mailu.</p>
             </div>
           </div>
 
-          <div className="skp-success-body">
-            <div className="skp-code">
-              <span className="lbl">Potvrzovací kód</span>
-              <span className="val">{code}</span>
-              <span className="mailto">
-                <Icon.email size={14} /> {form.email}
-              </span>
+          <div className="skp-email-confirm">
+            <div className="skp-email-confirm-icon">
+              <Icon.email size={32} />
             </div>
+            <div className="skp-email-confirm-body">
+              <div className="skp-email-confirm-title">Zkontrolujte e-mail a potvrďte rezervaci</div>
+              <div className="skp-email-confirm-addr">{form.email}</div>
+              <div className="skp-email-confirm-note">
+                Odkaz k potvrzení jsme odeslali na výše uvedenou adresu. Rezervaci lze stejným odkazem kdykoliv zdarma zrušit.
+              </div>
+            </div>
+          </div>
 
-            <div className="skp-success-detail">
-              <div className="row"><span className="k">Termín</span><span className="v">{DOW[selDate!.getDay()]} {fmtDMY(selDate!)}</span></div>
-              <div className="row"><span className="k">Čas</span><span className="v">{timeLabel} · {hoursCount} h</span></div>
-              <div className="row"><span className="k">Jméno</span><span className="v">{form.name}</span></div>
-              <div className="row"><span className="k">Platba</span><span className="v">{form.payment === 'hotove' ? 'Hotově' : 'Převodem'}</span></div>
-              <div className="row"><span className="k">Celkem</span><span className="v" style={{ fontSize: 16 }}>{total} Kč</span></div>
-            </div>
+          <div className="skp-success-detail">
+            <div className="row"><span className="k">Termín</span><span className="v">{DOW[selDate!.getDay()]} {fmtDMY(selDate!)}</span></div>
+            <div className="row"><span className="k">Čas</span><span className="v">{timeLabel} · {hoursCount} h</span></div>
+            <div className="row"><span className="k">Jméno</span><span className="v">{form.name}</span></div>
+            <div className="row"><span className="k">Platba</span><span className="v">{form.payment === 'hotove' ? 'Hotově' : 'Převodem'}</span></div>
+            <div className="row"><span className="k">Celkem</span><span className="v" style={{ fontSize: 16 }}>{total} Kč</span></div>
           </div>
 
           <div className="skp-btn-row">
