@@ -502,12 +502,8 @@
     gap: 18px;
   }
 
-  /* Calendar */
-  .sk-cal-panel { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .sk-cal-grid {
-    min-width: 500px;
-    grid-template-columns: 40px repeat(7, 1fr);
-  }
+  /* Calendar — grid-template-columns se nastavuje inline v TSX */
+  .sk-cal-grid { grid-template-columns: unset; }
   .sk-cal-time { padding: 0 6px 0 0; font-size: 11px; }
   .sk-cal-headrow { font-size: 11px; padding: 6px 2px; }
 

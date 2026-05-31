@@ -502,11 +502,12 @@ textarea.skp-input { height: 80px; padding-top: 11px; resize: none; }
 
   /* --- Rezervace: layout --- */
   .skp-resv { grid-template-columns: 1fr; }
+  .skp-resv-main { min-width: 0; }
   .skp-summary { position: static; }
 
   /* Week nav */
-  .skp-weeknav { flex-wrap: wrap; gap: 8px; }
-  .skp-weeknav .range { order: -1; width: 100%; }
+  .skp-weeknav { gap: 8px; }
+  .skp-weeknav .range { font-size: 14px; }
 
   /* --- Formulář (krok 2) --- */
   .skp-form-grid { grid-template-columns: 1fr; }

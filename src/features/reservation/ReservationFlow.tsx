@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Icon } from '../../components/Icon';
 import { MODES, type ReservationModeKey } from './reservation.config';
 import { DOW, DAY_MS, epochDay, fmtDM, fmtDMY, seed, HOURS, weekStart } from './date-utils';
@@ -11,17 +11,32 @@ type Props = {
 type SelState = { dayNo: number | null; slots: number[] };
 type FormState = { name: string; email: string; phone: string; note: string; agree: boolean; payment: 'hotove' | 'prevod' };
 
+const MOB_DAYS = 3;
+const MOB_BP = 640;
+
 export function ReservationFlow({ mode, onGoOverview }: Props) {
   const cfg = MODES[mode];
   const NOW = new Date();
   const [step, setStep] = useState(1);
   const [weekOff, setWeekOff] = useState(0);
+  const [dayOff, setDayOff] = useState(0);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= MOB_BP);
   const [sel, setSel] = useState<SelState>({ dayNo: null, slots: [] });
   const [form, setForm] = useState<FormState>({ name: '', email: '', phone: '', note: '', agree: false, payment: 'hotove' });
   const [touched, setTouched] = useState(false);
   const [code, setCode] = useState('');
   const [showRules, setShowRules] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${MOB_BP}px)`);
+    const handler = () => setIsMobile(mq.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
+  // Reset dayOff when switching weeks
+  useEffect(() => { setDayOff(0); }, [weekOff]);
 
   const { dayNo, slots } = sel;
 
@@ -33,7 +48,13 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [weekOff]);
 
-  const rangeLabel = `${fmtDM(week[0])} – ${fmtDMY(week[6])}`;
+  const visibleWeek = isMobile ? week.slice(dayOff, dayOff + MOB_DAYS) : week;
+  const canPrevDay = isMobile && dayOff > 0;
+  const canNextDay = isMobile && dayOff + MOB_DAYS < 7;
+
+  const rangeLabel = isMobile
+    ? `${fmtDM(visibleWeek[0])} – ${fmtDMY(visibleWeek[visibleWeek.length - 1])}`
+    : `${fmtDM(week[0])} – ${fmtDMY(week[6])}`;
 
   function slotInfo(date: Date, h: number): { st: string; remaining?: number } {
     const dn = epochDay(date);
@@ -233,24 +254,51 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
       <div className="sk-cal-panel skp-cal" style={{ flex: 1 }}>
         <div className="skp-weeknav">
           <span className="range"><Icon.cal /> {rangeLabel}</span>
-          <button className="sk-cal-pill icon" onClick={() => setWeekOff((w) => Math.max(0, w - 1))} disabled={weekOff === 0} style={weekOff === 0 ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}>
-            <Icon.chev dir="left" />
-          </button>
-          <button className="sk-cal-pill" onClick={() => setWeekOff(0)}>Tento týden</button>
-          <button className="sk-cal-pill icon" onClick={() => setWeekOff((w) => Math.min(3, w + 1))}>
-            <Icon.chev />
-          </button>
+          {isMobile ? (
+            <>
+              <button
+                className="sk-cal-pill icon"
+                onClick={() => canPrevDay ? setDayOff(d => d - 1) : (setWeekOff(w => Math.max(0, w - 1)), setDayOff(4))}
+                disabled={weekOff === 0 && !canPrevDay}
+                style={weekOff === 0 && !canPrevDay ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}
+              >
+                <Icon.chev dir="left" />
+              </button>
+              <button className="sk-cal-pill" onClick={() => { setWeekOff(0); setDayOff(0); }}>Dnes</button>
+              <button
+                className="sk-cal-pill icon"
+                onClick={() => canNextDay ? setDayOff(d => d + 1) : (setWeekOff(w => Math.min(3, w + 1)), setDayOff(0))}
+                disabled={weekOff === 3 && !canNextDay}
+                style={weekOff === 3 && !canNextDay ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}
+              >
+                <Icon.chev />
+              </button>
+            </>
+          ) : (
+            <>
+              <button className="sk-cal-pill icon" onClick={() => setWeekOff((w) => Math.max(0, w - 1))} disabled={weekOff === 0} style={weekOff === 0 ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}>
+                <Icon.chev dir="left" />
+              </button>
+              <button className="sk-cal-pill" onClick={() => setWeekOff(0)}>Tento týden</button>
+              <button className="sk-cal-pill icon" onClick={() => setWeekOff((w) => Math.min(3, w + 1))}>
+                <Icon.chev />
+              </button>
+            </>
+          )}
         </div>
 
-        <div className="sk-cal-grid" style={{ gridTemplateRows: `28px repeat(${HOURS.length}, 1fr)` }}>
+        <div className="sk-cal-grid" style={{
+          gridTemplateColumns: `${isMobile ? '40px' : '56px'} repeat(${visibleWeek.length}, 1fr)`,
+          gridTemplateRows: `28px repeat(${HOURS.length}, 1fr)`,
+        }}>
           <div className="sk-cal-cell sk-cal-headrow time"></div>
-          {week.map((d) => (
+          {visibleWeek.map((d) => (
             <div key={d.getTime()} className="sk-cal-cell sk-cal-headrow">{DOW[d.getDay()]} {fmtDM(d)}</div>
           ))}
           {HOURS.map((h) => (
             <React.Fragment key={h}>
               <div className="sk-cal-cell sk-cal-time">{h}:00</div>
-              {week.map((d) => {
+              {visibleWeek.map((d) => {
                 const info = slotInfo(d, h);
                 const isSel = epochDay(d) === dayNo && slots.includes(h);
                 let selCls = '';
