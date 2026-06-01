@@ -3,6 +3,9 @@ import { Icon } from '../../components/Icon';
 import { type ReservationModeKey } from './reservation.config';
 import { DOW, epochDay, fmtDM, fmtDMY, toISODate, HOURS, weekStart } from './date-utils';
 
+const HOUR_MIN = HOURS[0];
+const HOUR_MAX = HOURS[HOURS.length - 1];
+
 type Reservation = {
   id: number;
   activity: string;
@@ -33,7 +36,8 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
   const [weekOff, setWeekOff] = useState(0);
   const [popup, setPopup] = useState<Reservation | null>(null);
   const [reservations, setReservations] = useState<Reservation[]>([]);
-  const [actionLoading, setActionLoading] = useState<'confirm' | 'delete' | null>(null);
+  const [actionLoading, setActionLoading] = useState<'confirm' | 'delete' | 'patch' | null>(null);
+  const [editHours, setEditHours] = useState<number[] | null>(null);
 
   async function confirmReservation(id: number) {
     setActionLoading('confirm');
@@ -43,6 +47,27 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
       const confirmedAt = new Date().toISOString();
       setReservations(rs => rs.map(r => r.id === id ? { ...r, confirmed_at: confirmedAt } : r));
       setPopup(p => p?.id === id ? { ...p, confirmed_at: confirmedAt } : p);
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  async function patchReservationHours(id: number, hours: number[]) {
+    setActionLoading('patch');
+    try {
+      const res = await fetch(`/api/reservations/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hours }),
+      });
+      if (!res.ok) {
+        const data = await res.json() as { error?: string };
+        alert(data.error ?? 'Chyba při ukládání.');
+        return;
+      }
+      setReservations(rs => rs.map(r => r.id === id ? { ...r, hours } : r));
+      setPopup(p => p?.id === id ? { ...p, hours } : p);
+      setEditHours(null);
     } finally {
       setActionLoading(null);
     }
@@ -227,18 +252,72 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
       {/* ---- Popup kontaktu ---- */}
       {popup && (() => {
         const date = new Date(popup.date + 'T12:00:00');
+        const hours = editHours ?? popup.hours;
+        const sorted = [...hours].sort((a, b) => a - b);
+        const hMin = sorted[0];
+        const hMax = sorted[sorted.length - 1];
+        const hoursChanged = editHours !== null && (
+          editHours.length !== popup.hours.length ||
+          editHours.some((_, i) => [...editHours].sort((a,b)=>a-b)[i] !== [...popup.hours].sort((a,b)=>a-b)[i])
+        );
+
+        function shiftStart(delta: number) {
+          const s = [...hours].sort((a, b) => a - b);
+          const newMin = s[0] + delta;
+          if (newMin < HOUR_MIN || newMin >= s[s.length - 1]) return;
+          setEditHours(delta < 0 ? [newMin, ...s] : s.slice(1));
+        }
+
+        function shiftEnd(delta: number) {
+          const s = [...hours].sort((a, b) => a - b);
+          const newMax = s[s.length - 1] + delta;
+          if (newMax > HOUR_MAX || newMax <= s[0]) return;
+          setEditHours(delta > 0 ? [...s, newMax] : s.slice(0, -1));
+        }
+
         return (
-          <div className="sk-admin-popup-overlay" onClick={() => setPopup(null)}>
+          <div className="sk-admin-popup-overlay" onClick={() => { setPopup(null); setEditHours(null); }}>
             <div className="sk-admin-popup" onClick={e => e.stopPropagation()}>
               <div className="sk-admin-popup-header">
-                <button className="sk-admin-popup-close" onClick={() => setPopup(null)} aria-label="Zavřít">
+                <button className="sk-admin-popup-close" onClick={() => { setPopup(null); setEditHours(null); }} aria-label="Zavřít">
                   <Icon.close size={18} />
                 </button>
                 <div className="sk-admin-popup-name">{popup.name}</div>
-                <div className="sk-admin-popup-when">
-                  {DOW[date.getDay()]} {fmtDMY(date)}
-                  {' · '}{timeRange(popup.hours)}
+                <div className="sk-admin-popup-when">{DOW[date.getDay()]} {fmtDMY(date)}</div>
+                <div className="sk-admin-hours-editor">
+                  <button
+                    className="sk-admin-hours-btn"
+                    onClick={() => shiftStart(-1)}
+                    disabled={hMin <= HOUR_MIN || actionLoading !== null}
+                    title="Dřívější začátek"
+                  >−</button>
+                  <button
+                    className="sk-admin-hours-btn"
+                    onClick={() => shiftStart(1)}
+                    disabled={hMin >= hMax || actionLoading !== null}
+                    title="Pozdější začátek"
+                  >+</button>
+                  <span className="sk-admin-hours-range">{hMin}:00 – {hMax + 1}:00</span>
+                  <button
+                    className="sk-admin-hours-btn"
+                    onClick={() => shiftEnd(-1)}
+                    disabled={hMax <= hMin || actionLoading !== null}
+                    title="Dřívější konec"
+                  >−</button>
+                  <button
+                    className="sk-admin-hours-btn"
+                    onClick={() => shiftEnd(1)}
+                    disabled={hMax >= HOUR_MAX || actionLoading !== null}
+                    title="Pozdější konec"
+                  >+</button>
                 </div>
+                <button
+                  className="sk-admin-hours-save"
+                  onClick={() => void patchReservationHours(popup.id, editHours!)}
+                  disabled={!hoursChanged || actionLoading !== null}
+                >
+                  {actionLoading === 'patch' ? 'Ukládám…' : 'Uložit změnu hodin'}
+                </button>
                 <div style={{ marginTop: 8 }}>
                   {popup.confirmed_at
                     ? <span className="sk-admin-status-badge confirmed">Potvrzeno</span>

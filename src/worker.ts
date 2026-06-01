@@ -274,6 +274,46 @@ async function handlePostReservation(
   return json({ ok: true, emailSent }, 201);
 }
 
+async function handlePatchReservation(request: Request, env: Env): Promise<Response> {
+  const url = new URL(request.url);
+  const idStr = url.pathname.split('/').pop();
+  const id = idStr ? parseInt(idStr, 10) : NaN;
+
+  if (isNaN(id)) return json({ error: 'Invalid id' }, 400);
+
+  const body = await request.json() as { hours?: number[] };
+  const { hours } = body;
+
+  if (!hours || !Array.isArray(hours) || hours.length === 0) {
+    return json({ error: 'Missing or empty hours' }, 400);
+  }
+
+  const row = await env.DB.prepare(
+    'SELECT activity, date FROM reservations WHERE id = ?'
+  ).bind(id).first<{ activity: string; date: string }>();
+
+  if (!row) return json({ error: 'Not found' }, 404);
+
+  const { results: existing } = await env.DB.prepare(
+    'SELECT id, hours FROM reservations WHERE activity = ? AND date = ? AND id != ?'
+  ).bind(row.activity, row.date, id).all<{ id: number; hours: string }>();
+
+  const takenHours = new Set<number>();
+  for (const r of existing) {
+    for (const h of JSON.parse(r.hours) as number[]) takenHours.add(h);
+  }
+
+  if (hours.some(h => takenHours.has(h))) {
+    return json({ error: 'Vybraný termín koliduje s jinou rezervací.' }, 409);
+  }
+
+  await env.DB.prepare(
+    'UPDATE reservations SET hours = ? WHERE id = ?'
+  ).bind(JSON.stringify(hours), id).run();
+
+  return json({ ok: true });
+}
+
 async function handleDeleteReservation(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
   const idStr = url.pathname.split('/').pop();
@@ -391,6 +431,7 @@ export default {
     if (pathname.startsWith('/api/reservations/')) {
       if (method === 'DELETE') return handleDeleteReservation(request, env);
       if (method === 'POST') return handleAdminConfirm(request, env);
+      if (method === 'PATCH') return handlePatchReservation(request, env);
       return new Response('Method Not Allowed', { status: 405 });
     }
 
