@@ -192,7 +192,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
       <div className="skp-success">
         <div className="skp-success-card">
           <div className="skp-success-head">
-            <div className="skp-success-badge">
+            <div className={`skp-success-badge${emailSent ? ' pending' : ''}`}>
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M20 6 9 17l-5-5"/>
               </svg>
@@ -206,7 +206,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
             </div>
           </div>
 
-          <div className="skp-email-confirm">
+          <div className={`skp-email-confirm${emailSent ? ' pending' : ''}`}>
             <div className="skp-email-confirm-icon">
               <Icon.email size={32} />
             </div>

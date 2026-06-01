@@ -15,6 +15,7 @@ type Reservation = {
   payment: string;
   price: number;
   created_at: string;
+  confirmed_at: string | null;
 };
 
 function shortName(full: string): string {
@@ -32,6 +33,32 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
   const [weekOff, setWeekOff] = useState(0);
   const [popup, setPopup] = useState<Reservation | null>(null);
   const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [actionLoading, setActionLoading] = useState<'confirm' | 'delete' | null>(null);
+
+  async function confirmReservation(id: number) {
+    setActionLoading('confirm');
+    try {
+      const res = await fetch(`/api/reservations/${id}`, { method: 'POST' });
+      if (!res.ok) return;
+      const confirmedAt = new Date().toISOString();
+      setReservations(rs => rs.map(r => r.id === id ? { ...r, confirmed_at: confirmedAt } : r));
+      setPopup(p => p?.id === id ? { ...p, confirmed_at: confirmedAt } : p);
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  async function deleteReservation(id: number) {
+    setActionLoading('delete');
+    try {
+      const res = await fetch(`/api/reservations/${id}`, { method: 'DELETE' });
+      if (!res.ok) return;
+      setReservations(rs => rs.filter(r => r.id !== id));
+      setPopup(null);
+    } finally {
+      setActionLoading(null);
+    }
+  }
 
   const week = useMemo(() => {
     const start = weekStart(NOW, weekOff);
@@ -97,6 +124,12 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
           {weekNav}
         </div>
 
+        {/* ---- Legenda ---- */}
+        <div className="sk-admin-legend">
+          <span className="sk-admin-legend-item confirmed">Potvrzeno</span>
+          <span className="sk-admin-legend-item unconfirmed">Čeká na potvrzení</span>
+        </div>
+
         {/* ---- Kalendář ---- */}
         <div className="sk-admin-cal-wrap">
           <div
@@ -126,7 +159,7 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
                   return (
                     <div
                       key={key}
-                      className={`sk-admin-cal-cell${res ? ' booked' : ''}${past ? ' past' : ''}`}
+                      className={`sk-admin-cal-cell${res ? ' booked' : ''}${res && !res.confirmed_at ? ' unconfirmed' : ''}${past ? ' past' : ''}`}
                       onClick={res ? () => setPopup(res) : undefined}
                     >
                       {res && <span className="sk-admin-cal-name">{shortName(res.name)}</span>}
@@ -152,6 +185,7 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
                   <th>Jméno</th>
                   <th>E-mail</th>
                   <th>Telefon</th>
+                  <th>Stav</th>
                 </tr>
               </thead>
               <tbody>
@@ -171,6 +205,12 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
                         <td>{r.name}</td>
                         <td><a href={`mailto:${r.email}`} className="sk-admin-link" onClick={e => e.stopPropagation()}>{r.email}</a></td>
                         <td className="sk-admin-td-phone">{r.phone || '—'}</td>
+                        <td>
+                          {r.confirmed_at
+                            ? <span className="sk-admin-status-badge confirmed">Potvrzeno</span>
+                            : <span className="sk-admin-status-badge unconfirmed">Čeká</span>
+                          }
+                        </td>
                       </tr>
                     );
                   })}
@@ -199,6 +239,12 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
                   {DOW[date.getDay()]} {fmtDMY(date)}
                   {' · '}{timeRange(popup.hours)}
                 </div>
+                <div style={{ marginTop: 8 }}>
+                  {popup.confirmed_at
+                    ? <span className="sk-admin-status-badge confirmed">Potvrzeno</span>
+                    : <span className="sk-admin-status-badge unconfirmed">Čeká na potvrzení e-mailem</span>
+                  }
+                </div>
               </div>
               <div className="sk-admin-popup-body">
                 <a href={`mailto:${popup.email}`} className="sk-admin-popup-row">
@@ -216,6 +262,24 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
                     <span>Telefon nevyplněn</span>
                   </div>
                 )}
+              </div>
+              <div className="sk-admin-popup-footer">
+                {!popup.confirmed_at && (
+                  <button
+                    className="sk-admin-popup-btn confirm"
+                    onClick={() => void confirmReservation(popup.id)}
+                    disabled={actionLoading !== null}
+                  >
+                    {actionLoading === 'confirm' ? 'Potvrzuji…' : 'Potvrdit'}
+                  </button>
+                )}
+                <button
+                  className="sk-admin-popup-btn delete"
+                  onClick={() => void deleteReservation(popup.id)}
+                  disabled={actionLoading !== null}
+                >
+                  {actionLoading === 'delete' ? 'Mažu…' : 'Smazat'}
+                </button>
               </div>
             </div>
           </div>

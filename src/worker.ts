@@ -282,6 +282,20 @@ async function handleDeleteReservation(request: Request, env: Env): Promise<Resp
   return json({ ok: success });
 }
 
+async function handleAdminConfirm(request: Request, env: Env): Promise<Response> {
+  const url = new URL(request.url);
+  const idStr = url.pathname.split('/').pop();
+  const id = idStr ? parseInt(idStr, 10) : NaN;
+
+  if (isNaN(id)) return json({ error: 'Invalid id' }, 400);
+
+  const result = await env.DB.prepare(
+    'UPDATE reservations SET confirmed_at = ? WHERE id = ? AND confirmed_at IS NULL'
+  ).bind(new Date().toISOString(), id).run();
+
+  return json({ ok: result.meta.changes > 0 });
+}
+
 async function handleConfirmReservation(request: Request, env: Env): Promise<Response> {
   const token = new URL(request.url).searchParams.get('token');
   if (!token) return html('Neplatný odkaz.', 400);
@@ -370,6 +384,7 @@ export default {
 
     if (pathname.startsWith('/api/reservations/')) {
       if (method === 'DELETE') return handleDeleteReservation(request, env);
+      if (method === 'POST') return handleAdminConfirm(request, env);
       return new Response('Method Not Allowed', { status: 405 });
     }
 
