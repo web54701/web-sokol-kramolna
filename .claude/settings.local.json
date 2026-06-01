@@ -27,7 +27,12 @@
       "mcp__playwright__browser_resize",
       "Bash(git push *)",
       "Bash(Start-Sleep -Seconds 3)",
-      "Bash(Get-Content \"C:\\\\Users\\\\web\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-web-Documents-github-com-web-sokol-kramolna\\\\fb108953-a1e7-471f-83f3-6c039177cf2f\\\\tasks\\\\bi3ncmao3.output\" -Tail 10)"
+      "Bash(Get-Content \"C:\\\\Users\\\\web\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-web-Documents-github-com-web-sokol-kramolna\\\\fb108953-a1e7-471f-83f3-6c039177cf2f\\\\tasks\\\\bi3ncmao3.output\" -Tail 10)",
+      "Bash(start npm *)",
+      "mcp__playwright__browser_run_code_unsafe",
+      "Bash(npx tsc *)",
+      "Bash(git ls-tree *)",
+      "Bash(git branch *)"
     ]
   }
 }

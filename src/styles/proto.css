@@ -309,7 +309,7 @@ textarea.skp-input { height: 80px; padding-top: 11px; resize: none; }
 
 /* E-mail potvrzení — prominentní banner */
 .skp-email-confirm {
-  background: var(--sk-rust);
+  background: var(--sk-green-600);
   color: var(--sk-cream-50);
   border-radius: 14px;
   padding: 20px 22px;

@@ -20,7 +20,7 @@ Tento dokument popisuje, jak nakonfigurovat jiný Gmail účet pro odesílání 
 1. V levém menu: **APIs & Services → Google Auth Platform**
 2. Klikněte **Get started**
 3. Vyplňte:
-   - App name: `Sokol Kramolná`
+   - App name: `Sokol Kramolna`
    - User support email: váš Gmail účet
 4. **Next** → Audience: zvolte **External** → **Next**
 5. Contact information: váš Gmail účet → **Next**

@@ -56,7 +56,7 @@ function json(data: unknown, status = 200): Response {
 }
 
 function html(body: string, status = 200): Response {
-  return new Response(`<!DOCTYPE html><html lang="cs"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Rezervace · TJ Sokol Kramolná</title><style>body{font-family:system-ui,sans-serif;max-width:480px;margin:80px auto;padding:0 24px;color:#222}p{font-size:1.1rem;line-height:1.6}</style></head><body><p>${body}</p></body></html>`, {
+  return new Response(`<!DOCTYPE html><html lang="cs"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Rezervace · TJ Sokol Kramolna</title><style>body{font-family:system-ui,sans-serif;max-width:480px;margin:80px auto;padding:0 24px;color:#222}p{font-size:1.1rem;line-height:1.6}</style></head><body><p>${body}</p></body></html>`, {
     status,
     headers: { 'Content-Type': 'text/html; charset=UTF-8' },
   });
@@ -152,13 +152,13 @@ async function sendConfirmationEmail(
     `─────────────────────────────────────────`,
     ``,
     `S pozdravem,`,
-    `TJ Sokol Kramolná`,
+    `TJ Sokol Kramolna`,
   ].join('\n');
 
   const mime = [
     `From: web54701@gmail.com`,
     `To: ${body.email}`,
-    `Subject: ${encodeSubject('Potvrzení rezervace – TJ Sokol Kramolná')}`,
+    `Subject: ${encodeSubject('Potvrzení rezervace – TJ Sokol Kramolna')}`,
     `MIME-Version: 1.0`,
     `Content-Type: text/plain; charset=UTF-8`,
     `Content-Transfer-Encoding: base64`,
@@ -239,23 +239,33 @@ async function handlePostReservation(
   ).run();
 
   const origin = new URL(request.url).origin;
-  ctx.waitUntil(
-    sendConfirmationEmail(env, body, token, origin).catch(err => {
-      console.error('Email send failed:', err);
-      return Promise.all([
+  let emailSent = false;
+  let emailError: unknown = null;
+
+  try {
+    await sendConfirmationEmail(env, body, token, origin);
+    emailSent = true;
+  } catch (err) {
+    emailError = err;
+    console.error('Email send failed:', err);
+  }
+
+  if (!emailSent) {
+    ctx.waitUntil(
+      Promise.all([
         env.DB.prepare('UPDATE reservations SET confirmed_at = ? WHERE cancel_token = ?')
           .bind(new Date().toISOString(), token).run()
           .catch(dbErr => console.error('Auto-confirm failed:', dbErr)),
         sendAlert(
           env,
-          'Sokol Kramolná: selhalo odesílání e-mailu',
-          `Nepodařilo se odeslat potvrzovací e-mail zákazníkovi ${body.name} (${body.email}).\n\nReservace byla automaticky potvrzena.\n\nChyba: ${err}\n\nPravděpodobná příčina: expirovaný Gmail refresh token. Postup obnovy viz GMAIL.md.`,
+          'Sokol Kramolna: selhalo odesílání e-mailu',
+          `Nepodařilo se odeslat potvrzovací e-mail zákazníkovi ${body.name} (${body.email}).\n\nReservace byla automaticky potvrzena.\n\nChyba: ${emailError}\n\nPravděpodobná příčina: expirovaný Gmail refresh token. Postup obnovy viz GMAIL.md.`,
         ).catch(alertErr => console.error('Alert send failed:', alertErr)),
-      ]);
-    }),
-  );
+      ])
+    );
+  }
 
-  return json({ ok: true }, 201);
+  return json({ ok: true, emailSent }, 201);
 }
 
 async function handleDeleteReservation(request: Request, env: Env): Promise<Response> {
@@ -325,13 +335,13 @@ export default {
         console.error('Monthly token check failed:', err);
         await sendAlert(
           env,
-          'Sokol Kramolná: Gmail token expiroval',
+          'Sokol Kramolna: Gmail token expiroval',
           `Měsíční ověření Gmail refresh tokenu selhalo.\n\nChyba: ${err}\n\nPostup obnovy viz GMAIL.md.`,
         ).catch(alertErr => console.error('Alert send failed:', alertErr));
       } else {
         await sendAlert(
           env,
-          'Sokol Kramolná: Gmail token v pořádku',
+          'Sokol Kramolna: Gmail token v pořádku',
           'Měsíční ověření Gmail refresh tokenu proběhlo úspěšně. Odesílání e-mailů funguje.',
         ).catch(alertErr => console.error('Alert send failed:', alertErr));
       }

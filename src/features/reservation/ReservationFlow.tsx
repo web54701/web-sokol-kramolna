@@ -23,6 +23,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
   const cfg = MODES[mode];
   const NOW = new Date();
   const [step, setStep] = useState(1);
+  const [emailSent, setEmailSent] = useState(true);
   const [weekOff, setWeekOff] = useState(0);
   const [dayOff, setDayOff] = useState(0);
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= MOB_BP);
@@ -161,6 +162,8 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
         return;
       }
       if (!res.ok) throw new Error('server error');
+      const data = await res.json() as { ok: boolean; emailSent: boolean };
+      setEmailSent(data.emailSent);
       setStep(4);
       window.scrollTo(0, 0);
     } catch {
@@ -196,7 +199,10 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
             </div>
             <div>
               <h2>Rezervace přijata</h2>
-              <p className="lead">Termín je předběžně zarezervován. Aby byla rezervace platná, je nutné ji potvrdit kliknutím na odkaz v e-mailu.</p>
+              <p className="lead">{emailSent
+                ? 'Termín je předběžně zarezervován. Aby byla rezervace platná, je nutné ji potvrdit kliknutím na odkaz v e-mailu.'
+                : 'Rezervace je platná a termín je zarezervován.'
+              }</p>
             </div>
           </div>
 
@@ -204,13 +210,23 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
             <div className="skp-email-confirm-icon">
               <Icon.email size={32} />
             </div>
-            <div className="skp-email-confirm-body">
-              <div className="skp-email-confirm-title">Zkontrolujte e-mail a potvrďte rezervaci</div>
-              <div className="skp-email-confirm-addr">{form.email}</div>
-              <div className="skp-email-confirm-note">
-                Odkaz k potvrzení jsme odeslali na výše uvedenou adresu. Rezervaci lze stejným odkazem kdykoliv zdarma zrušit.
+            {emailSent ? (
+              <div className="skp-email-confirm-body">
+                <div className="skp-email-confirm-title">Zkontrolujte e-mail a potvrďte rezervaci</div>
+                <div className="skp-email-confirm-addr">{form.email}</div>
+                <div className="skp-email-confirm-note">
+                  Odkaz k potvrzení jsme odeslali na výše uvedenou adresu. Rezervaci lze stejným odkazem kdykoliv zdarma zrušit.
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="skp-email-confirm-body">
+                <div className="skp-email-confirm-title">Rezervace je potvrzena automaticky</div>
+                <div className="skp-email-confirm-addr">{form.email}</div>
+                <div className="skp-email-confirm-note">
+                  E-mail s odkazem se nepodařilo odeslat, proto jsme rezervaci potvrdili automaticky. Kontaktujte nás, pokud chcete rezervaci zrušit.
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="skp-success-detail">
