@@ -1,43 +1,37 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Icon } from '../../components/Icon';
-import { MODES, type ReservationModeKey } from './reservation.config';
-import { DOW, epochDay, fmtDM, fmtDMY, seed, HOURS, weekStart } from './date-utils';
-
-const FAKE_PEOPLE = [
-  { name: 'Jan Novák',        email: 'jan.novak@email.cz',       phone: '777 123 456' },
-  { name: 'Petra Svobodová',  email: 'p.svobodova@gmail.com',    phone: '602 456 789' },
-  { name: 'Tomáš Krejčí',    email: 't.krejci@seznam.cz',       phone: '' },
-  { name: 'Marie Horáková',   email: 'horakova.m@post.cz',       phone: '731 654 321' },
-  { name: 'Ondřej Blažek',   email: 'ondrej.blazek@email.cz',   phone: '605 111 222' },
-  { name: 'Lucie Marková',    email: 'l.markova@centrum.cz',     phone: '775 888 999' },
-  { name: 'Pavel Dvořák',    email: 'p.dvorak@gmail.com',        phone: '' },
-  { name: 'Eva Procházková',  email: 'eva.prochazka@email.cz',   phone: '723 456 789' },
-  { name: 'Michal Beneš',    email: 'michal.benes@volny.cz',    phone: '731 000 111' },
-  { name: 'Hana Červenková', email: 'h.cervenkova@seznam.cz',   phone: '608 222 333' },
-  { name: 'Radek Šimánek',   email: 'r.simanek@email.cz',       phone: '' },
-  { name: 'Zuzana Pokorná',  email: 'z.pokorna@gmail.com',       phone: '776 444 555' },
-];
+import { type ReservationModeKey } from './reservation.config';
+import { DOW, epochDay, fmtDM, fmtDMY, toISODate, HOURS, weekStart } from './date-utils';
 
 type Reservation = {
-  key: string;
-  date: Date;
-  h: number;
-  person: typeof FAKE_PEOPLE[number];
-  isPast: boolean;
+  id: number;
+  activity: string;
+  date: string;
+  hours: number[];
+  name: string;
+  email: string;
+  phone: string;
+  note: string;
+  payment: string;
+  price: number;
+  created_at: string;
 };
-
-type Popup = { reservation: Reservation };
 
 function shortName(full: string): string {
   const parts = full.trim().split(' ');
   return parts.length < 2 ? full : `${parts[0]} ${parts[1][0]}.`;
 }
 
+function timeRange(hours: number[]): string {
+  const sorted = [...hours].sort((a, b) => a - b);
+  return `${sorted[0]}:00 – ${sorted[sorted.length - 1] + 1}:00`;
+}
+
 export function AdminView({ mode }: { mode: ReservationModeKey }) {
-  const cfg = MODES[mode];
   const NOW = new Date();
   const [weekOff, setWeekOff] = useState(0);
-  const [popup, setPopup] = useState<Popup | null>(null);
+  const [popup, setPopup] = useState<Reservation | null>(null);
+  const [reservations, setReservations] = useState<Reservation[]>([]);
 
   const week = useMemo(() => {
     const start = weekStart(NOW, weekOff);
@@ -47,41 +41,25 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [weekOff]);
 
-  const reservations = useMemo<Reservation[]>(() => {
-    const result: Reservation[] = [];
-    const nowDn = epochDay(NOW);
-    for (const date of week) {
-      const dn = epochDay(date);
-      const isPast = dn < nowDn;
-      for (const h of HOURS) {
-        const s = seed(dn, h);
-        if (mode === 'tenis') {
-          const wd = date.getDay();
-          const weekend = wd === 0 || wd === 6;
-          const busy = s > 0.66 || (weekend && s > 0.5);
-          if (busy) {
-            result.push({ key: `${dn}-${h}`, date, h, person: FAKE_PEOPLE[Math.floor(s * FAKE_PEOPLE.length)], isPast });
-          }
-        } else {
-          const capacity = cfg.capacity ?? 15;
-          const peak = h >= 16 && h <= 19;
-          const used = Math.floor(s * (peak ? 17 : 11));
-          if (Math.max(0, capacity - used) === 0) {
-            result.push({ key: `${dn}-${h}`, date, h, person: FAKE_PEOPLE[Math.floor(s * FAKE_PEOPLE.length)], isPast });
-          }
-        }
-      }
-    }
-    return result;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const from = toISODate(week[0]);
+    const to = toISODate(week[6]);
+    fetch(`/api/reservations?activity=${mode}&from=${from}&to=${to}`)
+      .then(r => r.json())
+      .then((data: unknown) => setReservations(data as Reservation[]))
+      .catch(() => setReservations([]));
   }, [week, mode]);
 
+  // Mapa pro rychlé vyhledávání v kalendářní mřížce: klíč = "YYYY-MM-DD-h"
   const resMap = useMemo(() => {
     const m = new Map<string, Reservation>();
-    for (const r of reservations) m.set(r.key, r);
+    for (const r of reservations) {
+      for (const h of r.hours) m.set(`${r.date}-${h}`, r);
+    }
     return m;
   }, [reservations]);
 
+  const nowISO = toISODate(NOW);
   const nowDn = epochDay(NOW);
   const rangeLabel = `${fmtDM(week[0])} – ${fmtDMY(week[6])}`;
 
@@ -128,7 +106,6 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
               gridTemplateRows: `30px repeat(${HOURS.length}, 42px)`,
             }}
           >
-            {/* Hlavičky dnů */}
             <div className="sk-admin-cal-corner" />
             {week.map((d) => {
               const isToday = epochDay(d) === nowDn;
@@ -139,22 +116,20 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
               );
             })}
 
-            {/* Řádky hodin */}
             {HOURS.map((h) => (
               <React.Fragment key={h}>
                 <div className="sk-admin-cal-time">{h}:00</div>
                 {week.map((d) => {
-                  const dn = epochDay(d);
-                  const key = `${dn}-${h}`;
+                  const key = `${toISODate(d)}-${h}`;
                   const res = resMap.get(key);
-                  const past = dn < nowDn;
+                  const past = toISODate(d) < nowISO;
                   return (
                     <div
                       key={key}
                       className={`sk-admin-cal-cell${res ? ' booked' : ''}${past ? ' past' : ''}`}
-                      onClick={res ? () => setPopup({ reservation: res }) : undefined}
+                      onClick={res ? () => setPopup(res) : undefined}
                     >
-                      {res && <span className="sk-admin-cal-name">{shortName(res.person.name)}</span>}
+                      {res && <span className="sk-admin-cal-name">{shortName(res.name)}</span>}
                     </div>
                   );
                 })}
@@ -180,64 +155,72 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
                 </tr>
               </thead>
               <tbody>
-                {reservations.map((r) => (
-                  <tr
-                    key={r.key}
-                    className={r.isPast ? 'past' : ''}
-                    onClick={() => setPopup({ reservation: r })}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    <td className="sk-admin-td-date">{DOW[r.date.getDay()]} {fmtDM(r.date)}</td>
-                    <td className="sk-admin-td-time">{r.h}:00 – {r.h + 1}:00</td>
-                    <td>{r.person.name}</td>
-                    <td><a href={`mailto:${r.person.email}`} className="sk-admin-link" onClick={e => e.stopPropagation()}>{r.person.email}</a></td>
-                    <td className="sk-admin-td-phone">{r.person.phone || '—'}</td>
-                  </tr>
-                ))}
+                {[...reservations]
+                  .sort((a, b) => a.date !== b.date ? a.date.localeCompare(b.date) : Math.min(...a.hours) - Math.min(...b.hours))
+                  .map((r) => {
+                    const date = new Date(r.date + 'T12:00:00');
+                    return (
+                      <tr
+                        key={r.id}
+                        className={r.date < nowISO ? 'past' : ''}
+                        onClick={() => setPopup(r)}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        <td className="sk-admin-td-date">{DOW[date.getDay()]} {fmtDM(date)}</td>
+                        <td className="sk-admin-td-time">{timeRange(r.hours)}</td>
+                        <td>{r.name}</td>
+                        <td><a href={`mailto:${r.email}`} className="sk-admin-link" onClick={e => e.stopPropagation()}>{r.email}</a></td>
+                        <td className="sk-admin-td-phone">{r.phone || '—'}</td>
+                      </tr>
+                    );
+                  })}
               </tbody>
             </table>
           </div>
         )}
 
         <p className="sk-admin-note">
-          <Icon.shield size={13} /> Simulovaná data · Přístup pouze pro správce
+          <Icon.shield size={13} /> Přístup pouze pro správce
         </p>
       </div>
 
       {/* ---- Popup kontaktu ---- */}
-      {popup && (
-        <div className="sk-admin-popup-overlay" onClick={() => setPopup(null)}>
-          <div className="sk-admin-popup" onClick={e => e.stopPropagation()}>
-            <div className="sk-admin-popup-header">
-              <button className="sk-admin-popup-close" onClick={() => setPopup(null)} aria-label="Zavřít">
-                <Icon.close size={18} />
-              </button>
-              <div className="sk-admin-popup-name">{popup.reservation.person.name}</div>
-              <div className="sk-admin-popup-when">
-                {DOW[popup.reservation.date.getDay()]} {fmtDMY(popup.reservation.date)}
-                {' · '}{popup.reservation.h}:00 – {popup.reservation.h + 1}:00
+      {popup && (() => {
+        const date = new Date(popup.date + 'T12:00:00');
+        return (
+          <div className="sk-admin-popup-overlay" onClick={() => setPopup(null)}>
+            <div className="sk-admin-popup" onClick={e => e.stopPropagation()}>
+              <div className="sk-admin-popup-header">
+                <button className="sk-admin-popup-close" onClick={() => setPopup(null)} aria-label="Zavřít">
+                  <Icon.close size={18} />
+                </button>
+                <div className="sk-admin-popup-name">{popup.name}</div>
+                <div className="sk-admin-popup-when">
+                  {DOW[date.getDay()]} {fmtDMY(date)}
+                  {' · '}{timeRange(popup.hours)}
+                </div>
+              </div>
+              <div className="sk-admin-popup-body">
+                <a href={`mailto:${popup.email}`} className="sk-admin-popup-row">
+                  <Icon.email size={15} />
+                  <span>{popup.email}</span>
+                </a>
+                {popup.phone ? (
+                  <a href={`tel:${popup.phone.replace(/\s/g, '')}`} className="sk-admin-popup-row">
+                    <Icon.phone size={15} />
+                    <span>{popup.phone}</span>
+                  </a>
+                ) : (
+                  <div className="sk-admin-popup-row muted">
+                    <Icon.phone size={15} />
+                    <span>Telefon nevyplněn</span>
+                  </div>
+                )}
               </div>
             </div>
-            <div className="sk-admin-popup-body">
-              <a href={`mailto:${popup.reservation.person.email}`} className="sk-admin-popup-row">
-                <Icon.email size={15} />
-                <span>{popup.reservation.person.email}</span>
-              </a>
-              {popup.reservation.person.phone ? (
-                <a href={`tel:${popup.reservation.person.phone.replace(/\s/g, '')}`} className="sk-admin-popup-row">
-                  <Icon.phone size={15} />
-                  <span>{popup.reservation.person.phone}</span>
-                </a>
-              ) : (
-                <div className="sk-admin-popup-row muted">
-                  <Icon.phone size={15} />
-                  <span>Telefon nevyplněn</span>
-                </div>
-              )}
-            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

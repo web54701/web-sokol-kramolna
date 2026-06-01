@@ -8,7 +8,10 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "npm run build && wrangler dev",
-    "deploy": "npm run build && wrangler deploy"
+    "deploy": "npm run build && wrangler deploy",
+    "db:setup": "wrangler d1 create sokol-kramolna-db",
+    "db:migrate:local": "wrangler d1 execute sokol-kramolna-db --local --file=migrations/0001_reservations.sql",
+    "db:migrate": "wrangler d1 execute sokol-kramolna-db --file=migrations/0001_reservations.sql"
   },
   "dependencies": {
     "react": "^19.2.6",
@@ -16,6 +19,7 @@
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.39.0",
+    "@cloudflare/workers-types": "^4.20260601.1",
     "@eslint/js": "^10.0.1",
     "@types/node": "^24.12.3",
     "@types/react": "^19.2.14",

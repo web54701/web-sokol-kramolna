@@ -1,4 +1,6 @@
 export const DOW = ['Ne', 'Po', 'Út', 'St', 'Čt', 'Pá', 'So'];
+export const toISODate = (d: Date): string =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 export const DAY_MS = 86400000;
 export const epochDay = (d: Date): number => Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / DAY_MS);
 export const fmtDM = (d: Date): string => `${d.getDate()}. ${d.getMonth() + 1}.`;

@@ -1,7 +1,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Icon } from '../../components/Icon';
 import { MODES, type ReservationModeKey } from './reservation.config';
-import { DOW, DAY_MS, epochDay, fmtDM, fmtDMY, seed, HOURS, weekStart } from './date-utils';
+import { DOW, DAY_MS, epochDay, fmtDM, fmtDMY, toISODate, HOURS, weekStart } from './date-utils';
+
+interface ApiReservation {
+  date: string;
+  hours: number[];
+}
 
 type Props = {
   mode: ReservationModeKey;
@@ -33,6 +38,9 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
   });
   const [touched, setTouched] = useState(false);
   const [showRules, setShowRules] = useState(false);
+  const [busySlots, setBusySlots] = useState<Map<string, number>>(new Map());
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
     const mq = window.matchMedia(`(max-width: ${MOB_BP}px)`);
@@ -54,6 +62,25 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [weekOff]);
 
+  // Načíst obsazené sloty z DB pro aktuální týden
+  useEffect(() => {
+    const from = toISODate(week[0]);
+    const to = toISODate(week[6]);
+    fetch(`/api/reservations?activity=${mode}&from=${from}&to=${to}`)
+      .then(r => r.json())
+      .then((data: unknown) => {
+        const map = new Map<string, number>();
+        for (const r of data as ApiReservation[]) {
+          for (const h of r.hours) {
+            const key = `${r.date}-${h}`;
+            map.set(key, (map.get(key) ?? 0) + 1);
+          }
+        }
+        setBusySlots(map);
+      })
+      .catch(() => { /* při chybě zobrazit vše jako volné */ });
+  }, [week, mode]);
+
   const visibleWeek = isMobile ? week.slice(dayOff, dayOff + MOB_DAYS) : week;
   const canPrevDay = isMobile && dayOff > 0;
   const canNextDay = isMobile && dayOff + MOB_DAYS < 7;
@@ -66,16 +93,11 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
     const dn = epochDay(date);
     const isToday = dn === epochDay(NOW);
     if (dn < epochDay(NOW) || (isToday && h <= NOW.getHours())) return { st: 'past' };
-    const wd = date.getDay();
-    const weekend = wd === 0 || wd === 6;
-    const s = seed(dn, h);
+    const count = busySlots.get(`${toISODate(date)}-${h}`) ?? 0;
     if (mode === 'tenis') {
-      const busy = s > 0.66 || (weekend && s > 0.5);
-      return { st: busy ? 'busy' : 'free' };
+      return { st: count > 0 ? 'busy' : 'free' };
     } else {
-      const peak = h >= 16 && h <= 19;
-      const used = Math.floor(s * (peak ? 17 : 11));
-      const remaining = Math.max(0, cfg.capacity! - used);
+      const remaining = Math.max(0, cfg.capacity! - count);
       return { st: remaining === 0 ? 'full' : 'free', remaining };
     }
   }
@@ -113,10 +135,39 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
   const phoneOk = form.phone.trim().length === 0 || form.phone.replace(/\s/g, '').length >= 9;
   const formOk = nameOk && emailOk && phoneOk;
 
-  function submit() {
+  async function submit() {
+    if (!selDate || isSubmitting) return;
+    setIsSubmitting(true);
+    setSubmitError(null);
     try { localStorage.setItem('skp-contact', JSON.stringify({ name: form.name, email: form.email, phone: form.phone })); } catch { /* ignore */ }
-    setStep(4);
-    window.scrollTo(0, 0);
+    try {
+      const res = await fetch('/api/reservations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          activity: mode,
+          date: toISODate(selDate),
+          hours: sortedSlots,
+          name: form.name,
+          email: form.email,
+          phone: form.phone,
+          note: form.note,
+          payment: form.payment,
+          price: total,
+        }),
+      });
+      if (res.status === 409) {
+        setSubmitError('Vybraný termín byl mezitím obsazen. Vyberte prosím jiný čas.');
+        return;
+      }
+      if (!res.ok) throw new Error('server error');
+      setStep(4);
+      window.scrollTo(0, 0);
+    } catch {
+      setSubmitError('Nepodařilo se odeslat rezervaci. Zkuste to prosím znovu.');
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   function reset() {
@@ -212,13 +263,16 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
           </button>
         )}
         {step === 3 && (
-          <button className="skp-btn-primary" onClick={submit}>
-            Rezervovat
+          <button className="skp-btn-primary" onClick={() => { void submit(); }} disabled={isSubmitting}>
+            {isSubmitting ? 'Odesílám…' : 'Rezervovat'}
           </button>
         )}
       </div>
       {step === 2 && !formOk && touched && (
         <div className="skp-err-msg" style={{ marginTop: 8 }}>Vyplňte prosím všechna povinná pole.</div>
+      )}
+      {step === 3 && submitError && (
+        <div className="skp-err-msg" style={{ marginTop: 8 }}>{submitError}</div>
       )}
     </aside>
   );
