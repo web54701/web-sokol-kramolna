@@ -89,7 +89,7 @@ function formatDate(dateStr: string): string {
 }
 
 async function sendAlert(env: Env, subject: string, message: string): Promise<void> {
-  await fetch('https://api.resend.com/emails', {
+  const res = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${env.RESEND_API_KEY}`,
@@ -102,6 +102,7 @@ async function sendAlert(env: Env, subject: string, message: string): Promise<vo
       text: message,
     }),
   });
+  if (!res.ok) throw new Error(`Resend API ${res.status}: ${await res.text()}`);
 }
 
 async function sendConfirmationEmail(
