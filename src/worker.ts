@@ -124,10 +124,16 @@ async function sendConfirmationEmail(
   if (!tokenRes.ok) throw new Error(`Token exchange failed: ${await tokenRes.text()}`);
   const { access_token } = await tokenRes.json<{ access_token: string }>();
 
-  const hoursFormatted = [...body.hours]
-    .sort((a, b) => a - b)
-    .map(h => `${h}:00–${h + 1}:00`)
-    .join(', ');
+  const sortedHours = [...body.hours].sort((a, b) => a - b);
+  const ranges: string[] = [];
+  let i = 0;
+  while (i < sortedHours.length) {
+    let j = i;
+    while (j + 1 < sortedHours.length && sortedHours[j + 1] === sortedHours[j] + 1) j++;
+    ranges.push(`${sortedHours[i]}:00–${sortedHours[j] + 1}:00`);
+    i = j + 1;
+  }
+  const hoursFormatted = ranges.join(', ');
 
   const confirmUrl = `${origin}/api/reservations/confirm?token=${token}`;
   const cancelUrl = `${origin}/api/reservations/cancel?token=${token}`;
