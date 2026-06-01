@@ -20,5 +20,9 @@
       // Získejte ID spuštěním: npx wrangler d1 create sokol-kramolna-db
       "database_id": "ad8dfe4a-6c05-4f89-8389-22c04b611bd3"
     }
-  ]
+  ],
+  "triggers": {
+    // Spustí se 1. každého měsíce v 9:00 UTC – obnoví Gmail token a ověří platnost
+    "crons": ["0 9 1 * *"]
+  }
 }

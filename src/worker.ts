@@ -3,6 +3,11 @@
 export interface Env {
   ASSETS: Fetcher;
   DB: D1Database;
+  GMAIL_CLIENT_ID: string;
+  GMAIL_CLIENT_SECRET: string;
+  GMAIL_REFRESH_TOKEN: string;
+  RESEND_API_KEY: string;
+  ALERT_EMAIL: string;
 }
 
 interface ReservationRow {
@@ -17,6 +22,8 @@ interface ReservationRow {
   payment: string;
   price: number;
   created_at: string;
+  cancel_token: string | null;
+  confirmed_at: string | null;
 }
 
 interface ReservationBody {
@@ -31,11 +38,142 @@ interface ReservationBody {
   price: number;
 }
 
+const ACTIVITY_LABELS: Record<string, string> = {
+  tenis: 'Tenis · Kurt 1 · antuka',
+  gym: 'Posilovna · vstup',
+};
+
+const PAYMENT_LABELS: Record<string, string> = {
+  hotove: 'Osobně při vrácení klíčů',
+  prevod: 'Převodem na účet Sokola',
+};
+
 function json(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), {
     status,
     headers: { 'Content-Type': 'application/json' },
   });
+}
+
+function html(body: string, status = 200): Response {
+  return new Response(`<!DOCTYPE html><html lang="cs"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Rezervace · TJ Sokol Kramolná</title><style>body{font-family:system-ui,sans-serif;max-width:480px;margin:80px auto;padding:0 24px;color:#222}p{font-size:1.1rem;line-height:1.6}</style></head><body><p>${body}</p></body></html>`, {
+    status,
+    headers: { 'Content-Type': 'text/html; charset=UTF-8' },
+  });
+}
+
+function textToBase64(text: string): string {
+  const bytes = new TextEncoder().encode(text);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+  return btoa(binary);
+}
+
+function encodeSubject(text: string): string {
+  return `=?UTF-8?B?${textToBase64(text)}?=`;
+}
+
+function wrapLines(text: string, width = 76): string {
+  const lines: string[] = [];
+  for (let i = 0; i < text.length; i += width) lines.push(text.slice(i, i + width));
+  return lines.join('\r\n');
+}
+
+function toBase64url(ascii: string): string {
+  return btoa(ascii).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
+
+function formatDate(dateStr: string): string {
+  const [year, month, day] = dateStr.split('-');
+  return `${parseInt(day)}. ${parseInt(month)}. ${year}`;
+}
+
+async function sendAlert(env: Env, subject: string, message: string): Promise<void> {
+  await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${env.RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: 'onboarding@resend.dev',
+      to: [env.ALERT_EMAIL],
+      subject,
+      text: message,
+    }),
+  });
+}
+
+async function sendConfirmationEmail(
+  env: Env,
+  body: ReservationBody,
+  token: string,
+  origin: string,
+): Promise<void> {
+  const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'refresh_token',
+      client_id: env.GMAIL_CLIENT_ID,
+      client_secret: env.GMAIL_CLIENT_SECRET,
+      refresh_token: env.GMAIL_REFRESH_TOKEN,
+    }),
+  });
+  if (!tokenRes.ok) throw new Error(`Token exchange failed: ${await tokenRes.text()}`);
+  const { access_token } = await tokenRes.json<{ access_token: string }>();
+
+  const hoursFormatted = [...body.hours]
+    .sort((a, b) => a - b)
+    .map(h => `${h}:00–${h + 1}:00`)
+    .join(', ');
+
+  const confirmUrl = `${origin}/api/reservations/confirm?token=${token}`;
+  const cancelUrl = `${origin}/api/reservations/cancel?token=${token}`;
+
+  const emailBody = [
+    `Dobrý den, ${body.name},`,
+    ``,
+    `Vaše rezervace byla přijata. Níže najdete shrnutí a odkazy pro potvrzení nebo zrušení.`,
+    ``,
+    `Aktivita: ${ACTIVITY_LABELS[body.activity] ?? body.activity}`,
+    `Datum:    ${formatDate(body.date)}`,
+    `Hodiny:   ${hoursFormatted}`,
+    `Cena:     ${body.price} Kč`,
+    `Platba:   ${PAYMENT_LABELS[body.payment] ?? body.payment}`,
+    ``,
+    `─────────────────────────────────────────`,
+    `POTVRDIT REZERVACI:`,
+    confirmUrl,
+    ``,
+    `ZRUŠIT REZERVACI:`,
+    cancelUrl,
+    `─────────────────────────────────────────`,
+    ``,
+    `S pozdravem,`,
+    `TJ Sokol Kramolná`,
+  ].join('\n');
+
+  const mime = [
+    `From: web54701@gmail.com`,
+    `To: ${body.email}`,
+    `Subject: ${encodeSubject('Potvrzení rezervace – TJ Sokol Kramolná')}`,
+    `MIME-Version: 1.0`,
+    `Content-Type: text/plain; charset=UTF-8`,
+    `Content-Transfer-Encoding: base64`,
+    ``,
+    wrapLines(textToBase64(emailBody)),
+  ].join('\r\n');
+
+  const sendRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${access_token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ raw: toBase64url(mime) }),
+  });
+  if (!sendRes.ok) throw new Error(`Gmail API failed: ${await sendRes.text()}`);
 }
 
 async function handleGetReservations(request: Request, env: Env): Promise<Response> {
@@ -56,7 +194,11 @@ async function handleGetReservations(request: Request, env: Env): Promise<Respon
   return json(reservations);
 }
 
-async function handlePostReservation(request: Request, env: Env): Promise<Response> {
+async function handlePostReservation(
+  request: Request,
+  env: Env,
+  ctx: ExecutionContext,
+): Promise<Response> {
   const body = await request.json() as ReservationBody;
   const { activity, date, hours, name, email, payment, price } = body;
 
@@ -77,8 +219,10 @@ async function handlePostReservation(request: Request, env: Env): Promise<Respon
     return json({ error: 'Vybraný termín byl mezitím obsazen.' }, 409);
   }
 
+  const token = crypto.randomUUID();
+
   await env.DB.prepare(
-    'INSERT INTO reservations (activity, date, hours, name, email, phone, note, payment, price, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    'INSERT INTO reservations (activity, date, hours, name, email, phone, note, payment, price, created_at, cancel_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
   ).bind(
     activity,
     date,
@@ -90,7 +234,25 @@ async function handlePostReservation(request: Request, env: Env): Promise<Respon
     payment,
     price,
     new Date().toISOString(),
+    token,
   ).run();
+
+  const origin = new URL(request.url).origin;
+  ctx.waitUntil(
+    sendConfirmationEmail(env, body, token, origin).catch(err => {
+      console.error('Email send failed:', err);
+      return Promise.all([
+        env.DB.prepare('UPDATE reservations SET confirmed_at = ? WHERE cancel_token = ?')
+          .bind(new Date().toISOString(), token).run()
+          .catch(dbErr => console.error('Auto-confirm failed:', dbErr)),
+        sendAlert(
+          env,
+          'Sokol Kramolná: selhalo odesílání e-mailu',
+          `Nepodařilo se odeslat potvrzovací e-mail zákazníkovi ${body.name} (${body.email}).\n\nReservace byla automaticky potvrzena.\n\nChyba: ${err}\n\nPravděpodobná příčina: expirovaný Gmail refresh token. Postup obnovy viz GMAIL.md.`,
+        ).catch(alertErr => console.error('Alert send failed:', alertErr)),
+      ]);
+    }),
+  );
 
   return json({ ok: true }, 201);
 }
@@ -109,14 +271,89 @@ async function handleDeleteReservation(request: Request, env: Env): Promise<Resp
   return json({ ok: success });
 }
 
+async function handleConfirmReservation(request: Request, env: Env): Promise<Response> {
+  const token = new URL(request.url).searchParams.get('token');
+  if (!token) return html('Neplatný odkaz.', 400);
+
+  const result = await env.DB.prepare(
+    'UPDATE reservations SET confirmed_at = ? WHERE cancel_token = ? AND confirmed_at IS NULL'
+  ).bind(new Date().toISOString(), token).run();
+
+  if (result.meta.changes === 0) {
+    const row = await env.DB.prepare(
+      'SELECT confirmed_at FROM reservations WHERE cancel_token = ?'
+    ).bind(token).first<{ confirmed_at: string | null }>();
+
+    if (row?.confirmed_at) return html('Rezervace již byla potvrzena dříve. Děkujeme!');
+    return html('Rezervace nebyla nalezena nebo již neexistuje.', 404);
+  }
+
+  return html('Rezervace byla úspěšně potvrzena. Děkujeme!');
+}
+
+async function handleCancelReservation(request: Request, env: Env): Promise<Response> {
+  const token = new URL(request.url).searchParams.get('token');
+  if (!token) return html('Neplatný odkaz.', 400);
+
+  const result = await env.DB.prepare(
+    'DELETE FROM reservations WHERE cancel_token = ?'
+  ).bind(token).run();
+
+  if (result.meta.changes === 0) {
+    return html('Rezervace nebyla nalezena nebo již byla zrušena.', 404);
+  }
+
+  return html('Rezervace byla úspěšně zrušena.');
+}
+
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async scheduled(_controller: ScheduledController, env: Env, ctx: ExecutionContext): Promise<void> {
+    ctx.waitUntil((async () => {
+      const res = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'refresh_token',
+          client_id: env.GMAIL_CLIENT_ID,
+          client_secret: env.GMAIL_CLIENT_SECRET,
+          refresh_token: env.GMAIL_REFRESH_TOKEN,
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.text();
+        console.error('Monthly token check failed:', err);
+        await sendAlert(
+          env,
+          'Sokol Kramolná: Gmail token expiroval',
+          `Měsíční ověření Gmail refresh tokenu selhalo.\n\nChyba: ${err}\n\nPostup obnovy viz GMAIL.md.`,
+        ).catch(alertErr => console.error('Alert send failed:', alertErr));
+      } else {
+        await sendAlert(
+          env,
+          'Sokol Kramolná: Gmail token v pořádku',
+          'Měsíční ověření Gmail refresh tokenu proběhlo úspěšně. Odesílání e-mailů funguje.',
+        ).catch(alertErr => console.error('Alert send failed:', alertErr));
+      }
+    })());
+  },
+
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     const { pathname, method } = { pathname: url.pathname, method: request.method };
 
     if (pathname === '/api/reservations') {
       if (method === 'GET') return handleGetReservations(request, env);
-      if (method === 'POST') return handlePostReservation(request, env);
+      if (method === 'POST') return handlePostReservation(request, env, ctx);
+      return new Response('Method Not Allowed', { status: 405 });
+    }
+
+    if (pathname === '/api/reservations/confirm') {
+      if (method === 'GET') return handleConfirmReservation(request, env);
+      return new Response('Method Not Allowed', { status: 405 });
+    }
+
+    if (pathname === '/api/reservations/cancel') {
+      if (method === 'GET') return handleCancelReservation(request, env);
       return new Response('Method Not Allowed', { status: 405 });
     }
 
