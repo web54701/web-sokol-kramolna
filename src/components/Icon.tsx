@@ -73,4 +73,20 @@ export const Icon = {
       <path d="M18 6 6 18M6 6l12 12"/>
     </svg>
   ),
+  pencil: ({ size = 22 }: IconProps) => (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+    </svg>
+  ),
+  plus: ({ size = 22 }: IconProps) => (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 5v14M5 12h14"/>
+    </svg>
+  ),
+  ban: ({ size = 22 }: IconProps) => (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9"/>
+      <path d="M5.6 5.6 18.4 18.4"/>
+    </svg>
+  ),
 };

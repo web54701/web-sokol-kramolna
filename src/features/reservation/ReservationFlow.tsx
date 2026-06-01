@@ -8,6 +8,13 @@ interface ApiReservation {
   hours: number[];
 }
 
+interface BlockedSlot {
+  type: 'recurring' | 'specific';
+  dow: number | null;
+  date: string | null;
+  hours: number[] | null;
+}
+
 type Props = {
   mode: ReservationModeKey;
   onGoOverview: () => void;
@@ -40,6 +47,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
   const [touched, setTouched] = useState(false);
   const [showRules, setShowRules] = useState(false);
   const [busySlots, setBusySlots] = useState<Map<string, number>>(new Map());
+  const [blockedSlots, setBlockedSlots] = useState<BlockedSlot[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -82,6 +90,14 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
       .catch(() => { /* při chybě zobrazit vše jako volné */ });
   }, [week, mode]);
 
+  // Načíst blokování
+  useEffect(() => {
+    fetch(`/api/blocked?activity=${mode}`)
+      .then(r => r.json())
+      .then((data: unknown) => setBlockedSlots(data as BlockedSlot[]))
+      .catch(() => setBlockedSlots([]));
+  }, [mode]);
+
   const visibleWeek = isMobile ? week.slice(dayOff, dayOff + MOB_DAYS) : week;
   const canPrevDay = isMobile && dayOff > 0;
   const canNextDay = isMobile && dayOff + MOB_DAYS < 7;
@@ -90,10 +106,22 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
     ? `${fmtDM(visibleWeek[0])} – ${fmtDMY(visibleWeek[visibleWeek.length - 1])}`
     : `${fmtDM(week[0])} – ${fmtDMY(week[6])}`;
 
+  function isSlotBlocked(date: Date, h: number): boolean {
+    const dateStr = toISODate(date);
+    const dow = date.getDay();
+    for (const b of blockedSlots) {
+      if (b.type === 'recurring' && b.dow !== dow) continue;
+      if (b.type === 'specific' && b.date !== dateStr) continue;
+      if (b.hours === null || b.hours.includes(h)) return true;
+    }
+    return false;
+  }
+
   function slotInfo(date: Date, h: number): { st: string; remaining?: number } {
     const dn = epochDay(date);
     const isToday = dn === epochDay(NOW);
     if (dn < epochDay(NOW) || (isToday && h <= NOW.getHours())) return { st: 'past' };
+    if (isSlotBlocked(date, h)) return { st: 'blocked' };
     const count = busySlots.get(`${toISODate(date)}-${h}`) ?? 0;
     if (mode === 'tenis') {
       return { st: count > 0 ? 'busy' : 'free' };
@@ -402,6 +430,9 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
           <span><i className="sw" style={{ background: 'var(--sk-status-ok)' }} />Volno</span>
           <span><i className="sw" style={{ background: 'var(--sk-status-busy)' }} />{mode === 'gym' ? 'Plno' : 'Obsazeno'}</span>
           <span><i className="sw" style={{ background: 'var(--sk-green-800)' }} />Vaše volba</span>
+          {blockedSlots.length > 0 && (
+            <span><i className="sw" style={{ background: 'var(--sk-blocked)' }} />Nedostupné</span>
+          )}
           {mode === 'gym' && <span style={{ marginLeft: 'auto', color: 'var(--sk-mute)' }}>Číslo = volná místa</span>}
         </div>
         <div className="skp-cal-tip">

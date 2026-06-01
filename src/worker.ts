@@ -38,6 +38,35 @@ interface ReservationBody {
   price: number;
 }
 
+interface AdminReservationBody {
+  activity: string;
+  date: string;
+  hours: number[];
+  name: string;
+  email?: string;
+  phone?: string;
+  note?: string;
+  payment: string;
+  price: number;
+}
+
+interface BlockedSlotRow {
+  id: number;
+  activity: string;
+  type: string;
+  dow: number | null;
+  date: string | null;
+  hours: string | null;
+}
+
+interface BlockedSlotBody {
+  activity: string;
+  type: 'recurring' | 'specific';
+  dow?: number;
+  date?: string;
+  hours?: number[] | null;
+}
+
 const ACTIVITY_LABELS: Record<string, string> = {
   tenis: 'Tenis · Kurt 1 · antuka',
   gym: 'Posilovna · vstup',
@@ -281,12 +310,10 @@ async function handlePatchReservation(request: Request, env: Env): Promise<Respo
 
   if (isNaN(id)) return json({ error: 'Invalid id' }, 400);
 
-  const body = await request.json() as { hours?: number[] };
-  const { hours } = body;
+  const body = await request.json() as { hours?: number[]; name?: string };
+  const { hours, name } = body;
 
-  if (!hours || !Array.isArray(hours) || hours.length === 0) {
-    return json({ error: 'Missing or empty hours' }, 400);
-  }
+  if (hours === undefined && name === undefined) return json({ error: 'Nothing to update' }, 400);
 
   const row = await env.DB.prepare(
     'SELECT activity, date FROM reservations WHERE id = ?'
@@ -294,9 +321,49 @@ async function handlePatchReservation(request: Request, env: Env): Promise<Respo
 
   if (!row) return json({ error: 'Not found' }, 404);
 
+  if (hours !== undefined) {
+    if (!Array.isArray(hours) || hours.length === 0) return json({ error: 'Invalid hours' }, 400);
+
+    const { results: existing } = await env.DB.prepare(
+      'SELECT hours FROM reservations WHERE activity = ? AND date = ? AND id != ?'
+    ).bind(row.activity, row.date, id).all<{ hours: string }>();
+
+    const takenHours = new Set<number>();
+    for (const r of existing) {
+      for (const h of JSON.parse(r.hours) as number[]) takenHours.add(h);
+    }
+
+    if (hours.some(h => takenHours.has(h))) {
+      return json({ error: 'Vybraný termín koliduje s jinou rezervací.' }, 409);
+    }
+
+    await env.DB.prepare(
+      'UPDATE reservations SET hours = ? WHERE id = ?'
+    ).bind(JSON.stringify(hours), id).run();
+  }
+
+  if (name !== undefined) {
+    const trimmed = name.trim();
+    if (!trimmed) return json({ error: 'Jméno nesmí být prázdné.' }, 400);
+    await env.DB.prepare(
+      'UPDATE reservations SET name = ? WHERE id = ?'
+    ).bind(trimmed, id).run();
+  }
+
+  return json({ ok: true });
+}
+
+async function handleAdminReservation(request: Request, env: Env): Promise<Response> {
+  const body = await request.json() as AdminReservationBody;
+  const { activity, date, hours, name, payment, price } = body;
+
+  if (!activity || !date || !hours?.length || !name || !payment) {
+    return json({ error: 'Chybí povinné pole.' }, 400);
+  }
+
   const { results: existing } = await env.DB.prepare(
-    'SELECT id, hours FROM reservations WHERE activity = ? AND date = ? AND id != ?'
-  ).bind(row.activity, row.date, id).all<{ id: number; hours: string }>();
+    'SELECT hours FROM reservations WHERE activity = ? AND date = ?'
+  ).bind(activity, date).all<{ hours: string }>();
 
   const takenHours = new Set<number>();
   for (const r of existing) {
@@ -304,13 +371,63 @@ async function handlePatchReservation(request: Request, env: Env): Promise<Respo
   }
 
   if (hours.some(h => takenHours.has(h))) {
-    return json({ error: 'Vybraný termín koliduje s jinou rezervací.' }, 409);
+    return json({ error: 'Vybraný termín je obsazen.' }, 409);
   }
 
-  await env.DB.prepare(
-    'UPDATE reservations SET hours = ? WHERE id = ?'
-  ).bind(JSON.stringify(hours), id).run();
+  const now = new Date().toISOString();
+  const result = await env.DB.prepare(
+    'INSERT INTO reservations (activity, date, hours, name, email, phone, note, payment, price, created_at, confirmed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+  ).bind(
+    activity, date, JSON.stringify(hours), name,
+    body.email ?? '', body.phone ?? '', body.note ?? '',
+    payment, price ?? 0, now, now,
+  ).run();
 
+  return json({ ok: true, id: result.meta.last_row_id }, 201);
+}
+
+async function handleGetBlocked(request: Request, env: Env): Promise<Response> {
+  const activity = new URL(request.url).searchParams.get('activity');
+  if (!activity) return json({ error: 'Missing activity' }, 400);
+
+  const { results } = await env.DB.prepare(
+    'SELECT * FROM blocked_slots WHERE activity = ? ORDER BY type, dow, date'
+  ).bind(activity).all<BlockedSlotRow>();
+
+  const slots = results.map(r => ({
+    ...r,
+    hours: r.hours ? JSON.parse(r.hours) as number[] : null,
+  }));
+  return json(slots);
+}
+
+async function handlePostBlocked(request: Request, env: Env): Promise<Response> {
+  const body = await request.json() as BlockedSlotBody;
+  const { activity, type, dow, date, hours } = body;
+
+  if (!activity || !type) return json({ error: 'Chybí activity nebo type.' }, 400);
+  if (type === 'recurring' && dow === undefined) return json({ error: 'Chybí dow.' }, 400);
+  if (type === 'specific' && !date) return json({ error: 'Chybí date.' }, 400);
+
+  const result = await env.DB.prepare(
+    'INSERT INTO blocked_slots (activity, type, dow, date, hours) VALUES (?, ?, ?, ?, ?)'
+  ).bind(
+    activity, type,
+    type === 'recurring' ? (dow ?? null) : null,
+    type === 'specific' ? (date ?? null) : null,
+    hours != null ? JSON.stringify(hours) : null,
+  ).run();
+
+  return json({ ok: true, id: result.meta.last_row_id }, 201);
+}
+
+async function handleDeleteBlocked(request: Request, env: Env): Promise<Response> {
+  const url = new URL(request.url);
+  const idStr = url.pathname.split('/').pop();
+  const id = idStr ? parseInt(idStr, 10) : NaN;
+  if (isNaN(id)) return json({ error: 'Invalid id' }, 400);
+
+  await env.DB.prepare('DELETE FROM blocked_slots WHERE id = ?').bind(id).run();
   return json({ ok: true });
 }
 
@@ -415,6 +532,22 @@ export default {
     if (pathname === '/api/reservations') {
       if (method === 'GET') return handleGetReservations(request, env);
       if (method === 'POST') return handlePostReservation(request, env, ctx);
+      return new Response('Method Not Allowed', { status: 405 });
+    }
+
+    if (pathname === '/api/blocked') {
+      if (method === 'GET') return handleGetBlocked(request, env);
+      if (method === 'POST') return handlePostBlocked(request, env);
+      return new Response('Method Not Allowed', { status: 405 });
+    }
+
+    if (pathname.startsWith('/api/blocked/')) {
+      if (method === 'DELETE') return handleDeleteBlocked(request, env);
+      return new Response('Method Not Allowed', { status: 405 });
+    }
+
+    if (pathname === '/api/reservations/admin') {
+      if (method === 'POST') return handleAdminReservation(request, env);
       return new Response('Method Not Allowed', { status: 405 });
     }
 
