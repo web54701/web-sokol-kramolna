@@ -9,6 +9,9 @@ const HOUR_MAX = HOURS[HOURS.length - 1];
 const DOW_LONG = ['Neděle', 'Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek', 'Sobota'];
 const DOW_ORDER = [1, 2, 3, 4, 5, 6, 0]; // Po–Ne
 
+const MOB_DAYS = 3;
+const MOB_BP = 640;
+
 type Reservation = {
   id: number;
   activity: string;
@@ -81,6 +84,23 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
 
   // --- Navigace ---
   const [weekOff, setWeekOff] = useState(0);
+  const [dayOff, setDayOff] = useState(() => {
+    const idx = (new Date().getDay() + 6) % 7;
+    return Math.min(idx, 7 - MOB_DAYS);
+  });
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= MOB_BP);
+
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${MOB_BP}px)`);
+    const handler = () => setIsMobile(mq.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
+  useEffect(() => {
+    const idx = (new Date().getDay() + 6) % 7;
+    setDayOff(weekOff === 0 ? Math.min(idx, 7 - MOB_DAYS) : 0);
+  }, [weekOff]);
 
   // --- Rezervace ---
   const [reservations, setReservations] = useState<Reservation[]>([]);
@@ -475,7 +495,12 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
 
   const nowISO = toISODate(NOW);
   const nowDn = epochDay(NOW);
-  const rangeLabel = `${fmtDM(week[0])} – ${fmtDMY(week[6])}`;
+  const visibleWeek = isMobile ? week.slice(dayOff, dayOff + MOB_DAYS) : week;
+  const canPrevDay = isMobile && dayOff > 0;
+  const canNextDay = isMobile && dayOff + MOB_DAYS < 7;
+  const rangeLabel = isMobile
+    ? `${fmtDM(visibleWeek[0])} – ${fmtDMY(visibleWeek[visibleWeek.length - 1])}`
+    : `${fmtDM(week[0])} – ${fmtDMY(week[6])}`;
 
   // --- Render ---
 
@@ -492,15 +517,39 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
 
         {/* ---- Řádek 2: navigace týdne ---- */}
         <div className="sk-admin-weeknav-row">
-          <button className="sk-cal-pill icon" onClick={() => setWeekOff(w => Math.max(0, w - 1))}
-            disabled={weekOff === 0} style={weekOff === 0 ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}>
-            <Icon.chev dir="left" />
-          </button>
-          <button className="sk-cal-pill" onClick={() => setWeekOff(0)}>Tento týden</button>
-          <button className="sk-cal-pill icon" onClick={() => setWeekOff(w => Math.min(8, w + 1))}
-            disabled={weekOff === 8} style={weekOff === 8 ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}>
-            <Icon.chev />
-          </button>
+          {isMobile ? (
+            <>
+              <button
+                className="sk-cal-pill icon"
+                onClick={() => canPrevDay ? setDayOff(d => d - 1) : (setWeekOff(w => Math.max(0, w - 1)), setDayOff(4))}
+                disabled={weekOff === 0 && !canPrevDay}
+                style={weekOff === 0 && !canPrevDay ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}
+              >
+                <Icon.chev dir="left" />
+              </button>
+              <button className="sk-cal-pill" onClick={() => { setWeekOff(0); setDayOff(Math.min((new Date().getDay() + 6) % 7, 7 - MOB_DAYS)); }}>Dnes</button>
+              <button
+                className="sk-cal-pill icon"
+                onClick={() => canNextDay ? setDayOff(d => d + 1) : (setWeekOff(w => Math.min(8, w + 1)), setDayOff(0))}
+                disabled={weekOff === 8 && !canNextDay}
+                style={weekOff === 8 && !canNextDay ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}
+              >
+                <Icon.chev />
+              </button>
+            </>
+          ) : (
+            <>
+              <button className="sk-cal-pill icon" onClick={() => setWeekOff(w => Math.max(0, w - 1))}
+                disabled={weekOff === 0} style={weekOff === 0 ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}>
+                <Icon.chev dir="left" />
+              </button>
+              <button className="sk-cal-pill" onClick={() => setWeekOff(0)}>Tento týden</button>
+              <button className="sk-cal-pill icon" onClick={() => setWeekOff(w => Math.min(8, w + 1))}
+                disabled={weekOff === 8} style={weekOff === 8 ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}>
+                <Icon.chev />
+              </button>
+            </>
+          )}
         </div>
 
         {/* ---- Legenda + tlačítka na stejném řádku ---- */}
@@ -508,12 +557,8 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
           <div className="sk-admin-legend">
             <span className="sk-admin-legend-item confirmed">Potvrzeno</span>
             <span className="sk-admin-legend-item unconfirmed">Čeká na potvrzení</span>
-            {blockedSlots.length > 0 && (
-              <span className="sk-admin-legend-item blocked">Blokováno</span>
-            )}
-            {sel.slots.length > 0 && (
-              <span className="sk-admin-legend-item selected">Váš výběr</span>
-            )}
+            <span className="sk-admin-legend-item blocked">Blokováno</span>
+            <span className="sk-admin-legend-item selected">Váš výběr</span>
           </div>
           <div className="sk-admin-actions">
             <button className="sk-admin-add-btn" onClick={openAddModal} disabled={sel.slots.length === 0}>
@@ -528,11 +573,11 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
         {/* ---- Kalendář ---- */}
         <div className="sk-admin-cal-wrap">
           <div className="sk-admin-cal-grid" style={{
-            gridTemplateColumns: `52px repeat(7, minmax(80px, 1fr))`,
+            gridTemplateColumns: `${isMobile ? '40px' : '52px'} repeat(${visibleWeek.length}, minmax(${isMobile ? '0' : '80px'}, 1fr))`,
             gridTemplateRows: `30px repeat(${HOURS.length}, 52px)`,
           }}>
             <div className="sk-admin-cal-corner" />
-            {week.map((d) => {
+            {visibleWeek.map((d) => {
               const isToday = epochDay(d) === nowDn;
               return (
                 <div key={d.getTime()} className={`sk-admin-cal-head${isToday ? ' today' : ''}`}>
@@ -544,7 +589,7 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
             {HOURS.map((h) => (
               <React.Fragment key={h}>
                 <div className="sk-admin-cal-time">{h}:00</div>
-                {week.map((d) => {
+                {visibleWeek.map((d) => {
                   const key = `${toISODate(d)}-${h}`;
                   const res = resMap.get(key);
                   const blockObj = !res ? blockedMap.get(key) : undefined;
