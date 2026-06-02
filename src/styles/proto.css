@@ -940,7 +940,8 @@ textarea.skp-input { height: 80px; padding-top: 11px; resize: none; }
 .sk-admin-hours-save:hover:not(:disabled) { background: var(--sk-cream-100); }
 .sk-admin-hours-save:disabled { opacity: 0.55; cursor: not-allowed; }
 
-/* --- Tlačítko přidat rezervaci (admin bar) --- */
+/* --- Akční tlačítka v admin baru --- */
+.sk-admin-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .sk-admin-add-btn {
   display: inline-flex; align-items: center; gap: 5px;
   height: 32px; padding: 0 14px; border-radius: 8px; border: 0;
@@ -949,29 +950,62 @@ textarea.skp-input { height: 80px; padding-top: 11px; resize: none; }
   transition: background .1s;
 }
 .sk-admin-add-btn:hover { background: var(--sk-green-700); }
+.sk-admin-add-btn.secondary { background: color-mix(in srgb, var(--sk-blocked) 80%, var(--sk-mute)); color: var(--sk-ink); }
+.sk-admin-add-btn.secondary:hover { background: var(--sk-blocked); }
+
+/* --- Navigace týdne (vlastní řádek) --- */
+.sk-admin-weeknav-row {
+  display: flex; align-items: center; gap: 6px;
+  margin-bottom: 10px;
+}
+
+/* --- Legenda: položka výběru --- */
+.sk-admin-legend-item.selected { background: color-mix(in srgb, var(--sk-green-800) 15%, white); color: var(--sk-green-700); }
+.sk-admin-legend-item.selected::before { background: var(--sk-green-800); border: 2px solid var(--sk-green-600); }
+
+/* --- Výběr buněk v admin kalendáři --- */
+.sk-admin-cal-cell.admin-sel {
+  background: var(--sk-green-800); cursor: pointer;
+}
+.sk-admin-cal-cell.admin-sel:hover { background: var(--sk-green-700); }
 
 /* --- Editace jména v popupu --- */
-.sk-admin-name-row { cursor: default; }
-.sk-admin-name-input {
-  flex: 1; min-width: 0;
-  border: 1px solid var(--sk-line);
-  border-radius: 6px;
-  padding: 3px 7px;
-  font: inherit; font-size: 14px; color: var(--sk-ink);
-  background: white; outline: none;
+.sk-admin-popup-name-row {
+  display: flex; align-items: center; gap: 6px; margin-bottom: 2px;
 }
-.sk-admin-name-input:focus { border-color: var(--sk-green-400); }
+.sk-admin-name-edit-btn {
+  background: rgba(255,255,255,.15); border: none; cursor: pointer;
+  border-radius: 5px; padding: 3px 5px; display: flex; color: var(--sk-cream-50);
+  transition: background .1s; flex-shrink: 0;
+}
+.sk-admin-name-edit-btn:hover { background: rgba(255,255,255,.28); }
+.sk-admin-popup-name-edit-row {
+  display: flex; align-items: center; gap: 5px; margin-bottom: 2px;
+}
+.sk-admin-name-edit-input {
+  flex: 1; min-width: 0;
+  background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.35);
+  border-radius: 6px; padding: 3px 8px;
+  font: inherit; font-size: 18px; font-weight: 700;
+  color: var(--sk-cream-50); outline: none;
+}
+.sk-admin-name-edit-input:focus { border-color: rgba(255,255,255,.7); }
 .sk-admin-name-save-btn {
-  padding: 3px 10px; border-radius: 6px; border: 0;
-  background: var(--sk-green-800); color: white;
-  font: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
-  white-space: nowrap; flex-shrink: 0;
+  padding: 3px 8px; border-radius: 5px; border: 0;
+  background: rgba(255,255,255,.9); color: var(--sk-green-800);
+  font: inherit; font-size: 12px; font-weight: 700; cursor: pointer;
+  white-space: nowrap; flex-shrink: 0; transition: opacity .1s;
+}
+.sk-admin-name-save-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.sk-admin-name-cancel-btn {
+  padding: 3px 6px; border-radius: 5px; border: 0;
+  background: rgba(255,255,255,.12); color: var(--sk-cream-50);
+  font: inherit; font-size: 12px; cursor: pointer; white-space: nowrap; flex-shrink: 0;
   transition: background .1s;
 }
-.sk-admin-name-save-btn:hover:not(:disabled) { background: var(--sk-green-700); }
-.sk-admin-name-save-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.sk-admin-name-cancel-btn:hover { background: rgba(255,255,255,.22); }
 
-/* --- Formulář přidat rezervaci (modal) --- */
+/* --- Modální formulář (přidat rezervaci / blokování) --- */
 .sk-admin-add-modal { max-width: 400px; }
 .sk-admin-add-form {
   background: var(--sk-cream-50);
@@ -979,10 +1013,9 @@ textarea.skp-input { height: 80px; padding-top: 11px; resize: none; }
   display: flex; flex-direction: column; gap: 10px;
 }
 .sk-admin-add-field { display: flex; flex-direction: column; gap: 4px; }
-.sk-admin-add-field label { font-size: 12px; font-weight: 600; color: var(--sk-mute); }
+.sk-admin-add-field > label { font-size: 12px; font-weight: 600; color: var(--sk-mute); }
 .sk-admin-add-input {
-  border: 1px solid var(--sk-line);
-  border-radius: 7px; padding: 6px 10px;
+  border: 1px solid var(--sk-line); border-radius: 7px; padding: 6px 10px;
   font: inherit; font-size: 14px; color: var(--sk-ink);
   background: white; outline: none; width: 100%; box-sizing: border-box;
 }
@@ -990,7 +1023,7 @@ textarea.skp-input { height: 80px; padding-top: 11px; resize: none; }
 .sk-admin-req { color: var(--sk-rust); }
 .sk-admin-opt { font-weight: 400; color: var(--sk-mute); }
 
-/* --- Správa blokování --- */
+/* --- Seznam blokování --- */
 .sk-admin-block-list {
   display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px;
 }
@@ -1009,52 +1042,4 @@ textarea.skp-input { height: 80px; padding-top: 11px; resize: none; }
 }
 .sk-admin-block-del:hover:not(:disabled) { color: var(--sk-rust); background: rgba(196,90,53,.1); }
 .sk-admin-block-del:disabled { opacity: 0.5; cursor: not-allowed; }
-
-.sk-admin-block-add-btn {
-  display: inline-flex; align-items: center; gap: 5px;
-  height: 30px; padding: 0 12px; border-radius: 8px;
-  border: 1px dashed var(--sk-line); background: transparent;
-  color: var(--sk-mute); font: inherit; font-size: 13px; cursor: pointer;
-  transition: border-color .1s, color .1s;
-}
-.sk-admin-block-add-btn:hover { border-color: var(--sk-green-400); color: var(--sk-green-700); }
-
-.sk-admin-block-form {
-  background: var(--sk-cream-100);
-  border: 1px solid var(--sk-line);
-  border-radius: 10px; padding: 14px 16px;
-  display: flex; flex-direction: column; gap: 10px;
-}
-.sk-admin-block-row {
-  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-}
-.sk-admin-block-row label:first-child {
-  font-size: 12px; font-weight: 600; color: var(--sk-mute); width: 64px; flex-shrink: 0;
-}
-.sk-admin-block-radio {
-  display: flex; align-items: center; gap: 5px;
-  font-size: 13px; cursor: pointer;
-}
-.sk-admin-block-select {
-  border: 1px solid var(--sk-line); border-radius: 6px;
-  padding: 4px 8px; font: inherit; font-size: 13px;
-  color: var(--sk-ink); background: white; outline: none; cursor: pointer;
-}
-.sk-admin-block-select:focus { border-color: var(--sk-green-400); }
-.sk-admin-block-actions { display: flex; gap: 8px; margin-top: 4px; }
-.sk-admin-block-submit {
-  height: 32px; padding: 0 14px; border-radius: 8px; border: 0;
-  background: var(--sk-green-800); color: white;
-  font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
-  transition: background .1s, opacity .1s;
-}
-.sk-admin-block-submit:hover:not(:disabled) { background: var(--sk-green-700); }
-.sk-admin-block-submit:disabled { opacity: 0.55; cursor: not-allowed; }
-.sk-admin-block-cancel {
-  height: 32px; padding: 0 12px; border-radius: 8px;
-  border: 1px solid var(--sk-line); background: white;
-  font: inherit; font-size: 13px; color: var(--sk-mute); cursor: pointer;
-  transition: border-color .1s;
-}
-.sk-admin-block-cancel:hover { border-color: var(--sk-green-400); color: var(--sk-ink); }
 

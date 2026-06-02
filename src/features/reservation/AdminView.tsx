@@ -52,6 +52,8 @@ type BlockForm = {
   endHour: number;
 };
 
+type SelState = { dayNo: number | null; slots: number[] };
+
 function timeRange(hours: number[]): string {
   const sorted = [...hours].sort((a, b) => a - b);
   return `${sorted[0]}:00 – ${sorted[sorted.length - 1] + 1}:00`;
@@ -82,14 +84,17 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
   const [editHours, setEditHours] = useState<number[] | null>(null);
   const [editName, setEditName] = useState<string | null>(null);
 
-  // --- Přidat rezervaci ---
+  // --- Výběr buněk pro přidání rezervace ---
+  const [sel, setSel] = useState<SelState>({ dayNo: null, slots: [] });
+
+  // --- Přidat rezervaci (modal) ---
   const [addModal, setAddModal] = useState(false);
   const [addForm, setAddForm] = useState<AddForm | null>(null);
   const [addLoading, setAddLoading] = useState(false);
 
   // --- Blokování ---
   const [blockedSlots, setBlockedSlots] = useState<BlockedSlot[]>([]);
-  const [showBlockForm, setShowBlockForm] = useState(false);
+  const [blockModal, setBlockModal] = useState(false);
   const [blockForm, setBlockForm] = useState<BlockForm>({
     type: 'recurring', dow: 1, date: toISODate(NOW), allDay: true, startHour: 8, endHour: 20,
   });
@@ -102,6 +107,9 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
     );
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [weekOff]);
+
+  // Zrušit výběr buněk při změně týdne
+  useEffect(() => { setSel({ dayNo: null, slots: [] }); }, [weekOff]);
 
   // Načíst rezervace
   useEffect(() => {
@@ -136,7 +144,7 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
     return m;
   }, [reservations]);
 
-  // Set blokovaných slotů pro aktuální týden: "YYYY-MM-DD-h"
+  // Set blokovaných slotů pro aktuální týden
   const blockedSet = useMemo(() => {
     const s = new Set<string>();
     for (const b of blockedSlots) {
@@ -150,6 +158,27 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
     }
     return s;
   }, [blockedSlots, week]);
+
+  // --- Výběr buněk (pro přidání rezervace) ---
+
+  function clickCell(d: Date, h: number) {
+    const dn = epochDay(d);
+    setSel(prev => {
+      if (dn !== prev.dayNo) return { dayNo: dn, slots: [h] };
+      const cur = prev.slots;
+      if (cur.includes(h)) {
+        if (h === Math.min(...cur) || h === Math.max(...cur)) {
+          const next = cur.filter(x => x !== h);
+          return next.length === 0 ? { dayNo: null, slots: [] } : { dayNo: dn, slots: next };
+        }
+        return prev;
+      }
+      if (h === Math.min(...cur) - 1 || h === Math.max(...cur) + 1) {
+        return { dayNo: dn, slots: [...cur, h].sort((a, b) => a - b) };
+      }
+      return { dayNo: dn, slots: [h] };
+    });
+  }
 
   // --- Akce nad rezervacemi ---
 
@@ -223,17 +252,24 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
   // --- Přidat rezervaci (admin) ---
 
   function openAddModal() {
-    const firstFuture = week.find(d => epochDay(d) >= epochDay(NOW)) ?? week[0];
-    setAddForm({
-      date: toISODate(firstFuture),
-      startHour: 8,
-      endHour: 10,
-      name: '',
-      email: '',
-      phone: '',
-      note: '',
-      payment: 'hotove',
-    });
+    let date: string;
+    let startHour: number;
+    let endHour: number;
+
+    if (sel.dayNo !== null && sel.slots.length > 0) {
+      // Předvyplnit z výběru v kalendáři
+      const sorted = [...sel.slots].sort((a, b) => a - b);
+      date = toISODate(new Date(sel.dayNo * 86400000));
+      startHour = sorted[0];
+      endHour = sorted[sorted.length - 1] + 1;
+    } else {
+      const firstFuture = week.find(d => epochDay(d) >= epochDay(NOW)) ?? week[0];
+      date = toISODate(firstFuture);
+      startHour = 8;
+      endHour = 10;
+    }
+
+    setAddForm({ date, startHour, endHour, name: '', email: '', phone: '', note: '', payment: 'hotove' });
     setAddModal(true);
   }
 
@@ -249,15 +285,9 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          activity: mode,
-          date: addForm.date,
-          hours,
-          name: addForm.name,
-          email: addForm.email || undefined,
-          phone: addForm.phone || undefined,
-          note: addForm.note || undefined,
-          payment: addForm.payment,
-          price,
+          activity: mode, date: addForm.date, hours, name: addForm.name,
+          email: addForm.email || undefined, phone: addForm.phone || undefined,
+          note: addForm.note || undefined, payment: addForm.payment, price,
         }),
       });
       if (!res.ok) {
@@ -267,22 +297,15 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
       }
       const data = await res.json() as { ok: boolean; id: number };
       const newRes: Reservation = {
-        id: data.id,
-        activity: mode,
-        date: addForm.date,
-        hours,
-        name: addForm.name,
-        email: addForm.email,
-        phone: addForm.phone,
-        note: addForm.note,
-        payment: addForm.payment,
-        price,
-        created_at: new Date().toISOString(),
-        confirmed_at: new Date().toISOString(),
+        id: data.id, activity: mode, date: addForm.date, hours,
+        name: addForm.name, email: addForm.email, phone: addForm.phone,
+        note: addForm.note, payment: addForm.payment, price,
+        created_at: new Date().toISOString(), confirmed_at: new Date().toISOString(),
       };
       if (addForm.date >= toISODate(week[0]) && addForm.date <= toISODate(week[6])) {
         setReservations(rs => [...rs, newRes]);
       }
+      setSel({ dayNo: null, slots: [] });
       setAddModal(false);
       setAddForm(null);
     } finally {
@@ -303,8 +326,7 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          activity: mode,
-          type: blockForm.type,
+          activity: mode, type: blockForm.type,
           dow: blockForm.type === 'recurring' ? blockForm.dow : undefined,
           date: blockForm.type === 'specific' ? blockForm.date : undefined,
           hours,
@@ -313,15 +335,13 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
       if (!res.ok) { alert('Chyba při ukládání.'); return; }
       const data = await res.json() as { ok: boolean; id: number };
       const newBlock: BlockedSlot = {
-        id: data.id,
-        activity: mode,
-        type: blockForm.type,
+        id: data.id, activity: mode, type: blockForm.type,
         dow: blockForm.type === 'recurring' ? blockForm.dow : null,
         date: blockForm.type === 'specific' ? blockForm.date : null,
         hours,
       };
       setBlockedSlots(bs => [...bs, newBlock]);
-      setShowBlockForm(false);
+      setBlockModal(false);
     } finally {
       setBlockActionLoading(null);
     }
@@ -346,35 +366,36 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
 
   // --- Render ---
 
-  const weekNav = (
-    <div className="sk-admin-nav">
-      <button className="sk-cal-pill icon" onClick={() => setWeekOff(w => Math.max(0, w - 1))}
-        disabled={weekOff === 0} style={weekOff === 0 ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}>
-        <Icon.chev dir="left" />
-      </button>
-      <button className="sk-cal-pill" onClick={() => setWeekOff(0)}>Tento týden</button>
-      <button className="sk-cal-pill icon" onClick={() => setWeekOff(w => Math.min(8, w + 1))}
-        disabled={weekOff === 8} style={weekOff === 8 ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}>
-        <Icon.chev />
-      </button>
-    </div>
-  );
-
   return (
     <div className="skp-scroll">
       <div className="sk-admin-wrap">
 
-        {/* ---- Hlavička ---- */}
+        {/* ---- Řádek 1: název + akční tlačítka ---- */}
         <div className="sk-admin-bar">
           <span className="sk-admin-title">
             <Icon.cal /> Rezervace · {rangeLabel}
           </span>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div className="sk-admin-actions">
             <button className="sk-admin-add-btn" onClick={openAddModal}>
               <Icon.plus size={15} /> Přidat rezervaci
             </button>
-            {weekNav}
+            <button className="sk-admin-add-btn secondary" onClick={() => setBlockModal(true)}>
+              <Icon.ban size={15} /> Přidat blokování
+            </button>
           </div>
+        </div>
+
+        {/* ---- Řádek 2: navigace týdne ---- */}
+        <div className="sk-admin-weeknav-row">
+          <button className="sk-cal-pill icon" onClick={() => setWeekOff(w => Math.max(0, w - 1))}
+            disabled={weekOff === 0} style={weekOff === 0 ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}>
+            <Icon.chev dir="left" />
+          </button>
+          <button className="sk-cal-pill" onClick={() => setWeekOff(0)}>Tento týden</button>
+          <button className="sk-cal-pill icon" onClick={() => setWeekOff(w => Math.min(8, w + 1))}
+            disabled={weekOff === 8} style={weekOff === 8 ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}>
+            <Icon.chev />
+          </button>
         </div>
 
         {/* ---- Legenda ---- */}
@@ -383,6 +404,9 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
           <span className="sk-admin-legend-item unconfirmed">Čeká na potvrzení</span>
           {blockedSlots.length > 0 && (
             <span className="sk-admin-legend-item blocked">Blokováno</span>
+          )}
+          {sel.slots.length > 0 && (
+            <span className="sk-admin-legend-item selected">Váš výběr</span>
           )}
         </div>
 
@@ -410,16 +434,22 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
                   const res = resMap.get(key);
                   const isBlocked = blockedSet.has(key) && !res;
                   const past = toISODate(d) < nowISO;
+                  const isSel = sel.dayNo === epochDay(d) && sel.slots.includes(h);
                   const cls = [
                     'sk-admin-cal-cell',
                     res ? 'booked' : '',
                     res && !res.confirmed_at ? 'unconfirmed' : '',
                     isBlocked ? 'blocked' : '',
                     past ? 'past' : '',
+                    isSel ? 'admin-sel' : '',
                   ].filter(Boolean).join(' ');
+                  const handleClick = res
+                    ? () => setPopup(res)
+                    : isBlocked || past
+                      ? undefined
+                      : () => clickCell(d, h);
                   return (
-                    <div key={key} className={cls}
-                      onClick={res ? () => setPopup(res) : undefined}>
+                    <div key={key} className={cls} onClick={handleClick}>
                       {res && <span className="sk-admin-cal-name">{res.name}</span>}
                       {isBlocked && <span className="sk-admin-cal-blocked-label">Blokováno</span>}
                     </div>
@@ -430,7 +460,7 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
           </div>
         </div>
 
-        {/* ---- Tabulka ---- */}
+        {/* ---- Tabulka rezervací ---- */}
         <h4 className="sk-admin-section-head">Seznam rezervací</h4>
         {reservations.length === 0 ? (
           <div className="sk-admin-empty">Žádné rezervace v tomto týdnu.</div>
@@ -474,104 +504,24 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
           </div>
         )}
 
-        {/* ---- Blokování termínů ---- */}
-        <h4 className="sk-admin-section-head" style={{ marginTop: 32 }}>Blokování termínů</h4>
-        {blockedSlots.length === 0 && !showBlockForm && (
-          <div className="sk-admin-empty" style={{ padding: '16px 0' }}>Žádné blokování.</div>
-        )}
+        {/* ---- Blokování termínů (seznam) ---- */}
         {blockedSlots.length > 0 && (
-          <div className="sk-admin-block-list">
-            {blockedSlots.map(b => (
-              <div key={b.id} className="sk-admin-block-item">
-                <Icon.ban size={14} />
-                <span>{blockLabel(b)}</span>
-                <button
-                  className="sk-admin-block-del"
-                  onClick={() => void deleteBlock(b.id)}
-                  disabled={blockActionLoading === b.id}
-                >
-                  {blockActionLoading === b.id ? '…' : <Icon.close size={13} />}
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-        {showBlockForm ? (
-          <div className="sk-admin-block-form">
-            <div className="sk-admin-block-row">
-              <label>Typ:</label>
-              <label className="sk-admin-block-radio">
-                <input type="radio" checked={blockForm.type === 'recurring'}
-                  onChange={() => setBlockForm(f => ({ ...f, type: 'recurring' }))} />
-                Opakovaně
-              </label>
-              <label className="sk-admin-block-radio">
-                <input type="radio" checked={blockForm.type === 'specific'}
-                  onChange={() => setBlockForm(f => ({ ...f, type: 'specific' }))} />
-                Konkrétní datum
-              </label>
+          <>
+            <h4 className="sk-admin-section-head" style={{ marginTop: 32 }}>Blokované termíny</h4>
+            <div className="sk-admin-block-list">
+              {blockedSlots.map(b => (
+                <div key={b.id} className="sk-admin-block-item">
+                  <Icon.ban size={14} />
+                  <span>{blockLabel(b)}</span>
+                  <button className="sk-admin-block-del"
+                    onClick={() => void deleteBlock(b.id)}
+                    disabled={blockActionLoading === b.id}>
+                    {blockActionLoading === b.id ? '…' : <Icon.close size={13} />}
+                  </button>
+                </div>
+              ))}
             </div>
-            {blockForm.type === 'recurring' ? (
-              <div className="sk-admin-block-row">
-                <label>Den:</label>
-                <select className="sk-admin-block-select"
-                  value={blockForm.dow}
-                  onChange={e => setBlockForm(f => ({ ...f, dow: +e.target.value }))}>
-                  {DOW_LONG.map((name, i) => <option key={i} value={i}>{name}</option>)}
-                </select>
-              </div>
-            ) : (
-              <div className="sk-admin-block-row">
-                <label>Datum:</label>
-                <input type="date" className="sk-admin-block-select"
-                  value={blockForm.date}
-                  onChange={e => setBlockForm(f => ({ ...f, date: e.target.value }))} />
-              </div>
-            )}
-            <div className="sk-admin-block-row">
-              <label>Hodiny:</label>
-              <label className="sk-admin-block-radio">
-                <input type="checkbox" checked={blockForm.allDay}
-                  onChange={e => setBlockForm(f => ({ ...f, allDay: e.target.checked }))} />
-                Celý den
-              </label>
-              {!blockForm.allDay && (
-                <>
-                  <select className="sk-admin-block-select"
-                    value={blockForm.startHour}
-                    onChange={e => {
-                      const v = +e.target.value;
-                      setBlockForm(f => ({ ...f, startHour: v, endHour: Math.max(f.endHour, v + 1) }));
-                    }}>
-                    {HOURS.map(h => <option key={h} value={h}>{h}:00</option>)}
-                  </select>
-                  <span style={{ color: 'var(--sk-mute)' }}>–</span>
-                  <select className="sk-admin-block-select"
-                    value={blockForm.endHour}
-                    onChange={e => setBlockForm(f => ({ ...f, endHour: +e.target.value }))}>
-                    {HOURS.filter(h => h > blockForm.startHour).map(h => (
-                      <option key={h} value={h}>{h}:00</option>
-                    ))}
-                    <option value={HOUR_MAX + 1}>{HOUR_MAX + 1}:00</option>
-                  </select>
-                </>
-              )}
-            </div>
-            <div className="sk-admin-block-actions">
-              <button className="sk-admin-block-submit"
-                onClick={() => void submitAddBlock()}
-                disabled={blockActionLoading === 'add'}>
-                {blockActionLoading === 'add' ? 'Ukládám…' : 'Přidat blokování'}
-              </button>
-              <button className="sk-admin-block-cancel" onClick={() => setShowBlockForm(false)}>
-                Zrušit
-              </button>
-            </div>
-          </div>
-        ) : (
-          <button className="sk-admin-block-add-btn" onClick={() => setShowBlockForm(true)}>
-            <Icon.plus size={14} /> Přidat blokování
-          </button>
+          </>
         )}
 
         <p className="sk-admin-note">
@@ -590,8 +540,6 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
           editHours.length !== popup.hours.length ||
           editHours.some((_, i) => [...editHours].sort((a, b) => a - b)[i] !== [...popup.hours].sort((a, b) => a - b)[i])
         );
-        const currentName = editName ?? popup.name;
-        const nameChanged = editName !== null && editName.trim() !== popup.name;
 
         function shiftStart(delta: number) {
           const s = [...hours].sort((a, b) => a - b);
@@ -608,13 +556,47 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
         }
 
         return (
-          <div className="sk-admin-popup-overlay" onClick={() => { setPopup(null); }}>
+          <div className="sk-admin-popup-overlay" onClick={() => setPopup(null)}>
             <div className="sk-admin-popup" onClick={e => e.stopPropagation()}>
               <div className="sk-admin-popup-header">
                 <button className="sk-admin-popup-close" onClick={() => setPopup(null)} aria-label="Zavřít">
                   <Icon.close size={18} />
                 </button>
+
+                {/* Jméno: text + tužka → editace */}
+                {editName === null ? (
+                  <div className="sk-admin-popup-name-row">
+                    <div className="sk-admin-popup-name">{popup.name}</div>
+                    <button className="sk-admin-name-edit-btn" onClick={() => setEditName(popup.name)} title="Upravit jméno">
+                      <Icon.pencil size={13} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="sk-admin-popup-name-edit-row">
+                    <input
+                      className="sk-admin-name-edit-input"
+                      value={editName}
+                      onChange={e => setEditName(e.target.value)}
+                      autoFocus
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && editName.trim()) void patchReservationName(popup.id, editName.trim());
+                        if (e.key === 'Escape') setEditName(null);
+                      }}
+                    />
+                    <button className="sk-admin-name-save-btn"
+                      onClick={() => void patchReservationName(popup.id, editName.trim())}
+                      disabled={!editName.trim() || actionLoading !== null}>
+                      {actionLoading === 'patch' ? '…' : 'Uložit'}
+                    </button>
+                    <button className="sk-admin-name-cancel-btn" onClick={() => setEditName(null)}>
+                      Zrušit
+                    </button>
+                  </div>
+                )}
+
                 <div className="sk-admin-popup-when">{DOW[date.getDay()]} {fmtDMY(date)}</div>
+
+                {/* Editor hodin */}
                 <div className="sk-admin-hours-editor">
                   <button className="sk-admin-hours-btn" onClick={() => shiftStart(-1)}
                     disabled={hMin <= HOUR_MIN || actionLoading !== null} title="Dřívější začátek">−</button>
@@ -631,6 +613,7 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
                   disabled={!hoursChanged || actionLoading !== null}>
                   {actionLoading === 'patch' && hoursChanged ? 'Ukládám…' : 'Uložit změnu hodin'}
                 </button>
+
                 <div style={{ marginTop: 8 }}>
                   {popup.confirmed_at
                     ? <span className="sk-admin-status-badge confirmed">Potvrzeno</span>
@@ -638,50 +621,28 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
                   }
                 </div>
               </div>
+
               <div className="sk-admin-popup-body">
-                {/* Editace jména */}
-                <div className="sk-admin-popup-row sk-admin-name-row">
-                  <Icon.pencil size={14} />
-                  <input
-                    className="sk-admin-name-input"
-                    value={currentName}
-                    onChange={e => setEditName(e.target.value)}
-                  />
-                  {nameChanged && (
-                    <button
-                      className="sk-admin-name-save-btn"
-                      onClick={() => void patchReservationName(popup.id, editName!.trim())}
-                      disabled={!editName?.trim() || actionLoading !== null}
-                    >
-                      {actionLoading === 'patch' && nameChanged ? '…' : 'Uložit'}
-                    </button>
-                  )}
-                </div>
-                {/* E-mail */}
                 {popup.email ? (
                   <a href={`mailto:${popup.email}`} className="sk-admin-popup-row">
-                    <Icon.email size={15} />
-                    <span>{popup.email}</span>
+                    <Icon.email size={15} /><span>{popup.email}</span>
                   </a>
                 ) : (
                   <div className="sk-admin-popup-row muted">
-                    <Icon.email size={15} />
-                    <span>E-mail nevyplněn</span>
+                    <Icon.email size={15} /><span>E-mail nevyplněn</span>
                   </div>
                 )}
-                {/* Telefon */}
                 {popup.phone ? (
                   <a href={`tel:${popup.phone.replace(/\s/g, '')}`} className="sk-admin-popup-row">
-                    <Icon.phone size={15} />
-                    <span>{popup.phone}</span>
+                    <Icon.phone size={15} /><span>{popup.phone}</span>
                   </a>
                 ) : (
                   <div className="sk-admin-popup-row muted">
-                    <Icon.phone size={15} />
-                    <span>Telefon nevyplněn</span>
+                    <Icon.phone size={15} /><span>Telefon nevyplněn</span>
                   </div>
                 )}
               </div>
+
               <div className="sk-admin-popup-footer">
                 {!popup.confirmed_at && (
                   <button className="sk-admin-popup-btn confirm"
@@ -784,6 +745,93 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
                 onClick={() => void submitAddReservation()}
                 disabled={addLoading || !addForm.name.trim() || addForm.endHour <= addForm.startHour}>
                 {addLoading ? 'Ukládám…' : 'Přidat rezervaci'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ---- Modal: přidat blokování ---- */}
+      {blockModal && (
+        <div className="sk-admin-popup-overlay" onClick={() => setBlockModal(false)}>
+          <div className="sk-admin-popup sk-admin-add-modal" onClick={e => e.stopPropagation()}>
+            <div className="sk-admin-popup-header">
+              <button className="sk-admin-popup-close" onClick={() => setBlockModal(false)} aria-label="Zavřít">
+                <Icon.close size={18} />
+              </button>
+              <div className="sk-admin-popup-name">Přidat blokování</div>
+              <div className="sk-admin-popup-when">Termín bude nedostupný pro veřejnost</div>
+            </div>
+            <div className="sk-admin-add-form">
+              <div className="sk-admin-add-field">
+                <label>Typ</label>
+                <div style={{ display: 'flex', gap: 16 }}>
+                  {(['recurring', 'specific'] as const).map(val => (
+                    <label key={val} style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer', fontSize: 13 }}>
+                      <input type="radio" name="block-type" value={val}
+                        checked={blockForm.type === val}
+                        onChange={() => setBlockForm(f => ({ ...f, type: val }))} />
+                      {val === 'recurring' ? 'Pravidelně (každý týden)' : 'Konkrétní datum'}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {blockForm.type === 'recurring' ? (
+                <div className="sk-admin-add-field">
+                  <label>Den v týdnu</label>
+                  <select className="sk-admin-add-input"
+                    value={blockForm.dow}
+                    onChange={e => setBlockForm(f => ({ ...f, dow: +e.target.value }))}>
+                    {DOW_LONG.map((name, i) => <option key={i} value={i}>{name}</option>)}
+                  </select>
+                </div>
+              ) : (
+                <div className="sk-admin-add-field">
+                  <label>Datum</label>
+                  <input type="date" className="sk-admin-add-input"
+                    value={blockForm.date}
+                    onChange={e => setBlockForm(f => ({ ...f, date: e.target.value }))} />
+                </div>
+              )}
+
+              <div className="sk-admin-add-field">
+                <label>Hodiny</label>
+                <label style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 13, cursor: 'pointer', marginBottom: 6 }}>
+                  <input type="checkbox" checked={blockForm.allDay}
+                    onChange={e => setBlockForm(f => ({ ...f, allDay: e.target.checked }))} />
+                  Celý den
+                </label>
+                {!blockForm.allDay && (
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                    <select className="sk-admin-add-input"
+                      value={blockForm.startHour}
+                      onChange={e => {
+                        const v = +e.target.value;
+                        setBlockForm(f => ({ ...f, startHour: v, endHour: Math.max(f.endHour, v + 1) }));
+                      }}>
+                      {HOURS.map(h => <option key={h} value={h}>{h}:00</option>)}
+                    </select>
+                    <span style={{ color: 'var(--sk-mute)', flexShrink: 0 }}>–</span>
+                    <select className="sk-admin-add-input"
+                      value={blockForm.endHour}
+                      onChange={e => setBlockForm(f => ({ ...f, endHour: +e.target.value }))}>
+                      {HOURS.filter(h => h > blockForm.startHour).map(h => (
+                        <option key={h} value={h}>{h}:00</option>
+                      ))}
+                      <option value={HOUR_MAX + 1}>{HOUR_MAX + 1}:00</option>
+                    </select>
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="sk-admin-popup-footer">
+              <button className="sk-admin-popup-btn confirm"
+                onClick={() => void submitAddBlock()}
+                disabled={blockActionLoading === 'add' ||
+                  (blockForm.type === 'specific' && !blockForm.date) ||
+                  (!blockForm.allDay && blockForm.endHour <= blockForm.startHour)}>
+                {blockActionLoading === 'add' ? 'Ukládám…' : 'Přidat blokování'}
               </button>
             </div>
           </div>
