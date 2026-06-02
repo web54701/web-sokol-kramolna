@@ -7,6 +7,7 @@ const HOUR_MIN = HOURS[0];
 const HOUR_MAX = HOURS[HOURS.length - 1];
 
 const DOW_LONG = ['Neděle', 'Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek', 'Sobota'];
+const DOW_ORDER = [1, 2, 3, 4, 5, 6, 0]; // Po–Ne
 
 type Reservation = {
   id: number;
@@ -398,6 +399,26 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
     setEditBlock(b);
   }
 
+  function openAddBlockModal() {
+    if (sel.dayNo !== null && sel.slots.length > 0) {
+      const selDay = week.find(d => epochDay(d) === sel.dayNo);
+      const allDay = sel.slots.length === HOURS.length;
+      setBlockForm({
+        type: 'specific',
+        dow: 1,
+        date: selDay ? toISODate(selDay) : toISODate(NOW),
+        allDay,
+        startHour: allDay ? 8 : Math.min(...sel.slots),
+        endHour: allDay ? 20 : Math.max(...sel.slots) + 1,
+        note: '',
+        notePublic: false,
+      });
+    } else {
+      setBlockForm({ type: 'recurring', dow: 1, date: toISODate(NOW), allDay: true, startHour: 8, endHour: 20, note: '', notePublic: false });
+    }
+    setBlockModal(true);
+  }
+
   function closeBlockModal() {
     setBlockModal(false);
     setEditBlock(null);
@@ -495,10 +516,10 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
             )}
           </div>
           <div className="sk-admin-actions">
-            <button className="sk-admin-add-btn" onClick={openAddModal}>
+            <button className="sk-admin-add-btn" onClick={openAddModal} disabled={sel.slots.length === 0}>
               <Icon.plus size={15} /> Přidat rezervaci
             </button>
-            <button className="sk-admin-add-btn secondary" onClick={() => setBlockModal(true)}>
+            <button className="sk-admin-add-btn secondary" onClick={openAddBlockModal}>
               <Icon.ban size={15} /> Přidat blokování
             </button>
           </div>
@@ -948,7 +969,7 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
                     <select className="sk-admin-add-input"
                       value={blockForm.dow}
                       onChange={e => setBlockForm(f => ({ ...f, dow: +e.target.value }))}>
-                      {DOW_LONG.map((name, i) => <option key={i} value={i}>{name}</option>)}
+                      {DOW_ORDER.map(i => <option key={i} value={i}>{DOW_LONG[i]}</option>)}
                     </select>
                   </div>
                 ) : (
@@ -1001,7 +1022,7 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
                   <label style={{ display: 'flex', gap: 7, alignItems: 'center', cursor: 'pointer', fontWeight: 400, color: 'var(--sk-ink)' }}>
                     <input type="checkbox" checked={blockForm.notePublic}
                       onChange={e => setBlockForm(f => ({ ...f, notePublic: e.target.checked }))} />
-                    Poznámka viditelná zákazníkům
+                    Veřejně viditelná poznámka
                   </label>
                 </div>
               </div>

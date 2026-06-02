@@ -32,7 +32,8 @@
       "mcp__playwright__browser_run_code_unsafe",
       "Bash(npx tsc *)",
       "Bash(git ls-tree *)",
-      "Bash(git branch *)"
+      "Bash(git branch *)",
+      "Bash(npx wrangler *)"
     ]
   }
 }

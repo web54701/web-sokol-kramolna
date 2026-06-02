@@ -14,6 +14,7 @@ export function seed(dayNo: number, h: number): number {
 
 export function weekStart(now: Date, offset: number): Date {
   const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  d.setDate(d.getDate() + offset * 7);
+  const dow = d.getDay();
+  d.setDate(d.getDate() - (dow === 0 ? 6 : dow - 1) + offset * 7);
   return d;
 }

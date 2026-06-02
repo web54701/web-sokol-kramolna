@@ -973,7 +973,8 @@ textarea.skp-input { height: 80px; padding-top: 11px; resize: none; }
   font: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
   transition: background .1s;
 }
-.sk-admin-add-btn:hover { background: var(--sk-green-700); }
+.sk-admin-add-btn:hover:not(:disabled) { background: var(--sk-green-700); }
+.sk-admin-add-btn:disabled { opacity: 0.4; cursor: default; }
 .sk-admin-add-btn.secondary { background: color-mix(in srgb, var(--sk-blocked) 80%, var(--sk-mute)); color: var(--sk-ink); }
 .sk-admin-add-btn.secondary:hover { background: var(--sk-blocked); }
 

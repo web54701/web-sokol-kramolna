@@ -34,7 +34,10 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
   const [step, setStep] = useState(1);
   const [emailSent, setEmailSent] = useState(true);
   const [weekOff, setWeekOff] = useState(0);
-  const [dayOff, setDayOff] = useState(0);
+  const [dayOff, setDayOff] = useState(() => {
+    const idx = (new Date().getDay() + 6) % 7; // 0=Po ... 6=Ne
+    return Math.min(idx, 7 - MOB_DAYS);
+  });
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= MOB_BP);
   const [sel, setSel] = useState<SelState>({ dayNo: null, slots: [] });
   const [form, setForm] = useState<FormState>(() => {
@@ -61,7 +64,10 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
   }, []);
 
   // Reset dayOff when switching weeks
-  useEffect(() => { setDayOff(0); }, [weekOff]);
+  useEffect(() => {
+    const idx = (new Date().getDay() + 6) % 7;
+    setDayOff(weekOff === 0 ? Math.min(idx, 7 - MOB_DAYS) : 0);
+  }, [weekOff]);
 
   const { dayNo, slots } = sel;
 
@@ -367,7 +373,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
               >
                 <Icon.chev dir="left" />
               </button>
-              <button className="sk-cal-pill" onClick={() => { setWeekOff(0); setDayOff(0); }}>Dnes</button>
+              <button className="sk-cal-pill" onClick={() => { setWeekOff(0); setDayOff(Math.min((new Date().getDay() + 6) % 7, 7 - MOB_DAYS)); }}>Dnes</button>
               <button
                 className="sk-cal-pill icon"
                 onClick={() => canNextDay ? setDayOff(d => d + 1) : (setWeekOff(w => Math.min(3, w + 1)), setDayOff(0))}
