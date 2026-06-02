@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Icon } from '../../components/Icon';
 import { MODES, type ReservationModeKey } from './reservation.config';
 import { DOW, DAY_MS, epochDay, fmtDM, fmtDMY, toISODate, HOURS, weekStart } from './date-utils';
@@ -25,8 +25,8 @@ type Props = {
 type SelState = { dayNo: number | null; slots: number[] };
 type FormState = { name: string; email: string; phone: string; note: string; payment: 'hotove' | 'prevod' };
 
-const MOB_DAYS = 3;
-const MOB_BP = 640;
+const TIME_COL_W = 56;
+const MIN_COL_W = 80;
 
 export function ReservationFlow({ mode, onGoOverview }: Props) {
   const cfg = MODES[mode];
@@ -34,11 +34,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
   const [step, setStep] = useState(1);
   const [emailSent, setEmailSent] = useState(true);
   const [weekOff, setWeekOff] = useState(0);
-  const [dayOff, setDayOff] = useState(() => {
-    const idx = (new Date().getDay() + 6) % 7; // 0=Po ... 6=Ne
-    return Math.min(idx, 7 - MOB_DAYS);
-  });
-  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= MOB_BP);
+  const calScrollRef = useRef<HTMLDivElement>(null);
   const [sel, setSel] = useState<SelState>({ dayNo: null, slots: [] });
   const [form, setForm] = useState<FormState>(() => {
     try {
@@ -53,20 +49,19 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
   const [showRules, setShowRules] = useState(false);
   const [busySlots, setBusySlots] = useState<Map<string, number>>(new Map());
   const [blockedSlots, setBlockedSlots] = useState<BlockedSlot[]>([]);
+  const [spots, setSpots] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  // Auto-scroll: na aktuální týden zobrazí dnešní den vlevo, na jiné týdny pondělí
   useEffect(() => {
-    const mq = window.matchMedia(`(max-width: ${MOB_BP}px)`);
-    const handler = () => setIsMobile(mq.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, []);
-
-  // Reset dayOff when switching weeks
-  useEffect(() => {
-    const idx = (new Date().getDay() + 6) % 7;
-    setDayOff(weekOff === 0 ? Math.min(idx, 7 - MOB_DAYS) : 0);
+    const el = calScrollRef.current;
+    if (!el) return;
+    const colW = el.scrollWidth > el.clientWidth
+      ? (el.scrollWidth - TIME_COL_W) / 7
+      : MIN_COL_W;
+    const idx = weekOff === 0 ? (new Date().getDay() + 6) % 7 : 0;
+    el.scrollLeft = idx * colW;
   }, [weekOff]);
 
   const { dayNo, slots } = sel;
@@ -106,13 +101,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
       .catch(() => setBlockedSlots([]));
   }, [mode]);
 
-  const visibleWeek = isMobile ? week.slice(dayOff, dayOff + MOB_DAYS) : week;
-  const canPrevDay = isMobile && dayOff > 0;
-  const canNextDay = isMobile && dayOff + MOB_DAYS < 7;
-
-  const rangeLabel = isMobile
-    ? `${fmtDM(visibleWeek[0])} – ${fmtDMY(visibleWeek[visibleWeek.length - 1])}`
-    : `${fmtDM(week[0])} – ${fmtDMY(week[6])}`;
+  const rangeLabel = `${fmtDM(week[0])} – ${fmtDMY(week[6])}`;
 
   function findBlock(date: Date, h: number): BlockedSlot | undefined {
     const dateStr = toISODate(date);
@@ -136,7 +125,19 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
       return { st: count > 0 ? 'busy' : 'free' };
     } else {
       const remaining = Math.max(0, cfg.capacity! - count);
-      return { st: remaining === 0 ? 'full' : 'free', remaining };
+      return { st: remaining < spots ? 'full' : 'free', remaining };
+    }
+  }
+
+  function changeSpots(n: number) {
+    if (n < 1 || n > cfg.capacity!) return;
+    setSpots(n);
+    if (sel.dayNo !== null && sel.slots.length > 0 && selDate) {
+      const valid = sel.slots.every(h => {
+        const count = busySlots.get(`${toISODate(selDate)}-${h}`) ?? 0;
+        return Math.max(0, cfg.capacity! - count) >= n;
+      });
+      if (!valid) setSel({ dayNo: null, slots: [] });
     }
   }
 
@@ -162,7 +163,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
 
   const selDate = dayNo != null ? new Date(dayNo * DAY_MS) : null;
   const sortedSlots = [...slots].sort((a, b) => a - b);
-  const total = selDate ? sortedSlots.reduce((sum, h) => sum + cfg.priceFor(selDate, h), 0) : 0;
+  const total = selDate ? sortedSlots.reduce((sum, h) => sum + cfg.priceFor(selDate, h), 0) * (mode === 'gym' ? spots : 1) : 0;
   const timeLabel = sortedSlots.length
     ? `${sortedSlots[0]}:00 – ${sortedSlots[sortedSlots.length - 1] + 1}:00`
     : '—';
@@ -186,6 +187,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
           activity: mode,
           date: toISODate(selDate),
           hours: sortedSlots,
+          spots: mode === 'gym' ? spots : 1,
           name: form.name,
           email: form.email,
           phone: form.phone,
@@ -269,6 +271,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
           <div className="skp-success-detail">
             <div className="row"><span className="k">Termín</span><span className="v">{DOW[selDate!.getDay()]} {fmtDMY(selDate!)}</span></div>
             <div className="row"><span className="k">Čas</span><span className="v">{timeLabel} · {hoursCount} h</span></div>
+            {mode === 'gym' && <div className="row"><span className="k">Míst</span><span className="v">{spots}</span></div>}
             <div className="row"><span className="k">Jméno</span><span className="v">{form.name}</span></div>
             <div className="row"><span className="k">Platba</span><span className="v">{form.payment === 'hotove' ? 'Osobně při vrácení klíčů' : 'Převodem na účet Sokola'}</span></div>
             <div className="row"><span className="k">Celkem</span><span className="v" style={{ fontSize: 16 }}>{total} Kč</span></div>
@@ -289,6 +292,17 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
       <h3>Souhrn rezervace</h3>
       <div className="sub">{cfg.court}</div>
 
+      {mode === 'gym' && (
+        <div className="skp-sum-row skp-sum-spots">
+          <span className="k">Počet míst</span>
+          <span className="skp-spots-ctrl">
+            <button className="skp-spots-btn" onClick={() => changeSpots(spots - 1)} disabled={spots <= 1}>−</button>
+            <span className="skp-spots-val">{spots}</span>
+            <button className="skp-spots-btn" onClick={() => changeSpots(spots + 1)} disabled={spots >= cfg.capacity!}>+</button>
+          </span>
+        </div>
+      )}
+
       {hoursCount === 0 ? (
         <div className="skp-sum-empty">
           Zatím nemáte vybraný termín.<br />Klikněte na volné hodiny v kalendáři.
@@ -298,6 +312,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
           <div className="skp-sum-row"><span className="k">Datum</span><span className="v">{DOW[selDate!.getDay()]} {fmtDM(selDate!)}</span></div>
           <div className="skp-sum-row"><span className="k">Čas</span><span className="v">{timeLabel}</span></div>
           <div className="skp-sum-row"><span className="k">Délka</span><span className="v">{hoursCount} {hoursCount === 1 ? 'hodina' : hoursCount < 5 ? 'hodiny' : 'hodin'}</span></div>
+          {mode === 'gym' && <div className="skp-sum-row"><span className="k">Míst</span><span className="v">{spots}</span></div>}
           <div className="skp-sum-row"><span className="k">Sazba</span><span className="v">{mode === 'tenis' ? '100 Kč / h' : 'Jednorázový vstup'}</span></div>
           <div className="skp-sum-total"><span className="k">Celkem</span><span className="v">{total} Kč</span></div>
         </>
@@ -363,51 +378,31 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
       <div className="sk-cal-panel skp-cal" style={{ flex: 1 }}>
         <div className="skp-weeknav">
           <span className="range"><Icon.cal /> {rangeLabel}</span>
-          {isMobile ? (
-            <>
-              <button
-                className="sk-cal-pill icon"
-                onClick={() => canPrevDay ? setDayOff(d => d - 1) : (setWeekOff(w => Math.max(0, w - 1)), setDayOff(4))}
-                disabled={weekOff === 0 && !canPrevDay}
-                style={weekOff === 0 && !canPrevDay ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}
-              >
-                <Icon.chev dir="left" />
-              </button>
-              <button className="sk-cal-pill" onClick={() => { setWeekOff(0); setDayOff(Math.min((new Date().getDay() + 6) % 7, 7 - MOB_DAYS)); }}>Dnes</button>
-              <button
-                className="sk-cal-pill icon"
-                onClick={() => canNextDay ? setDayOff(d => d + 1) : (setWeekOff(w => Math.min(3, w + 1)), setDayOff(0))}
-                disabled={weekOff === 3 && !canNextDay}
-                style={weekOff === 3 && !canNextDay ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}
-              >
-                <Icon.chev />
-              </button>
-            </>
-          ) : (
-            <>
-              <button className="sk-cal-pill icon" onClick={() => setWeekOff((w) => Math.max(0, w - 1))} disabled={weekOff === 0} style={weekOff === 0 ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}>
-                <Icon.chev dir="left" />
-              </button>
-              <button className="sk-cal-pill" onClick={() => setWeekOff(0)}>Tento týden</button>
-              <button className="sk-cal-pill icon" onClick={() => setWeekOff((w) => Math.min(3, w + 1))}>
-                <Icon.chev />
-              </button>
-            </>
-          )}
+          <>
+            <button className="sk-cal-pill icon" onClick={() => setWeekOff((w) => Math.max(0, w - 1))} disabled={weekOff === 0} style={weekOff === 0 ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}>
+              <Icon.chev dir="left" />
+            </button>
+            <button className="sk-cal-pill" onClick={() => setWeekOff(0)}>Dnes</button>
+            <button className="sk-cal-pill icon" onClick={() => setWeekOff((w) => Math.min(3, w + 1))} disabled={weekOff === 3} style={weekOff === 3 ? { opacity: 0.4, cursor: 'not-allowed' } : undefined}>
+              <Icon.chev />
+            </button>
+          </>
         </div>
 
+        <div className="sk-cal-scroll-outer">
+          <div className="sk-cal-scroll" ref={calScrollRef}>
         <div className="sk-cal-grid" style={{
-          gridTemplateColumns: `${isMobile ? '40px' : '56px'} repeat(${visibleWeek.length}, 1fr)`,
+          gridTemplateColumns: `${TIME_COL_W}px repeat(7, minmax(${MIN_COL_W}px, 1fr))`,
           gridTemplateRows: `28px repeat(${HOURS.length}, 1fr)`,
         }}>
           <div className="sk-cal-cell sk-cal-headrow time"></div>
-          {visibleWeek.map((d) => (
+          {week.map((d) => (
             <div key={d.getTime()} className="sk-cal-cell sk-cal-headrow">{DOW[d.getDay()]} {fmtDM(d)}</div>
           ))}
           {HOURS.map((h) => (
             <React.Fragment key={h}>
               <div className="sk-cal-cell sk-cal-time">{h}:00</div>
-              {visibleWeek.map((d) => {
+              {week.map((d) => {
                 const info = slotInfo(d, h);
                 const isSel = epochDay(d) === dayNo && slots.includes(h);
                 let selCls = '';
@@ -433,6 +428,8 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
               })}
             </React.Fragment>
           ))}
+        </div>
+          </div>
         </div>
 
         <div className="sk-cal-legend">
@@ -513,6 +510,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
           </div>
           <div className="kv"><span className="k">Datum</span><span className="v">{DOW[selDate!.getDay()]} {fmtDMY(selDate!)}</span></div>
           <div className="kv"><span className="k">Čas</span><span className="v">{timeLabel} · {hoursCount} h</span></div>
+          {mode === 'gym' && <div className="kv"><span className="k">Míst</span><span className="v">{spots}</span></div>}
         </div>
         <div className="skp-review-sec">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>

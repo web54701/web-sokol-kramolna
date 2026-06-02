@@ -130,7 +130,7 @@
   font-size: 11px; font-weight: 700; color: var(--sk-green-900); opacity: 0.75;
   pointer-events: none;
 }
-.skp-cal .sk-cal-slot.sel .cap { color: var(--sk-cream-50); opacity: 1; }
+.skp-cal .sk-cal-slot.sel .cap { display: none; }
 .skp-cal .sk-cal-slot.full { background: var(--sk-status-busy); cursor: not-allowed; }
 .skp-cal .sk-cal-slot.full .cap { color: #7a3d12; }
 .skp-cal .sk-cal-slot.blocked { background: var(--sk-blocked); cursor: not-allowed; }
@@ -170,6 +170,19 @@
   font-size: 13px; line-height: 1.5;
   border: 1.5px dashed var(--sk-line); border-radius: 10px;
 }
+.skp-sum-spots { align-items: center; }
+.skp-spots-ctrl { display: flex; align-items: center; gap: 8px; }
+.skp-spots-val { min-width: 20px; text-align: center; font-weight: 700; color: var(--sk-green-800); font-size: 15px; }
+.skp-spots-btn {
+  width: 28px; height: 28px; border-radius: 7px;
+  border: 1.5px solid var(--sk-line); background: var(--sk-cream-50);
+  color: var(--sk-green-800); font-size: 18px; font-weight: 600;
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: pointer; line-height: 1; padding: 0;
+  transition: border-color .12s, background .12s;
+}
+.skp-spots-btn:hover:not(:disabled) { border-color: var(--sk-green-600); background: var(--sk-cream-100); }
+.skp-spots-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 .skp-sum-total {
   display: flex; justify-content: space-between; align-items: baseline;
   padding: 16px 0 4px;
@@ -687,11 +700,14 @@ textarea.skp-input { height: 80px; padding-top: 11px; resize: none; }
 }
 .sk-admin-cal-grid {
   display: grid;
-  min-width: 560px;
 }
 .sk-admin-cal-corner {
   border-bottom: 1px solid var(--sk-line);
   border-right: 1px solid var(--sk-line);
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: var(--sk-cream-50);
 }
 .sk-admin-cal-head {
   padding: 0 6px;
@@ -709,6 +725,10 @@ textarea.skp-input { height: 80px; padding-top: 11px; resize: none; }
   padding-right: 8px;
   border-right: 1px solid var(--sk-line);
   border-bottom: 1px solid var(--sk-line-soft);
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--sk-cream-50);
 }
 .sk-admin-cal-cell {
   border-right: 1px solid var(--sk-line);
