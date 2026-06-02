@@ -100,8 +100,8 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
 
   // --- Blokování ---
   const [blockedSlots, setBlockedSlots] = useState<BlockedSlot[]>([]);
-  const [blockModal, setBlockModal] = useState(false);
-  const [blockPopup, setBlockPopup] = useState<BlockedSlot | null>(null);
+  const [blockModal, setBlockModal] = useState(false);   // create mode
+  const [editBlock, setEditBlock] = useState<BlockedSlot | null>(null);  // edit mode
   const [blockForm, setBlockForm] = useState<BlockForm>({
     type: 'recurring', dow: 1, date: toISODate(NOW), allDay: true, startHour: 8, endHour: 20,
     note: '', notePublic: false,
@@ -384,6 +384,61 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
     }
   }
 
+  function openEditBlock(b: BlockedSlot) {
+    setBlockForm({
+      type: b.type,
+      dow: b.dow ?? 1,
+      date: b.date ?? toISODate(NOW),
+      allDay: b.hours === null,
+      startHour: b.hours ? Math.min(...b.hours) : 8,
+      endHour: b.hours ? Math.max(...b.hours) + 1 : 20,
+      note: b.note,
+      notePublic: b.note_public,
+    });
+    setEditBlock(b);
+  }
+
+  function closeBlockModal() {
+    setBlockModal(false);
+    setEditBlock(null);
+    setBlockForm({ type: 'recurring', dow: 1, date: toISODate(NOW), allDay: true, startHour: 8, endHour: 20, note: '', notePublic: false });
+  }
+
+  async function submitEditBlock() {
+    if (!editBlock) return;
+    const hours = blockForm.allDay
+      ? null
+      : Array.from({ length: blockForm.endHour - blockForm.startHour }, (_, i) => blockForm.startHour + i);
+
+    setBlockActionLoading(editBlock.id);
+    try {
+      const res = await fetch(`/api/blocked/${editBlock.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          activity: mode, type: blockForm.type,
+          dow: blockForm.type === 'recurring' ? blockForm.dow : undefined,
+          date: blockForm.type === 'specific' ? blockForm.date : undefined,
+          hours,
+          note: blockForm.note,
+          note_public: blockForm.notePublic,
+        }),
+      });
+      if (!res.ok) { alert('Chyba při ukládání.'); return; }
+      const updated: BlockedSlot = {
+        ...editBlock,
+        type: blockForm.type,
+        dow: blockForm.type === 'recurring' ? blockForm.dow : null,
+        date: blockForm.type === 'specific' ? blockForm.date : null,
+        hours, note: blockForm.note, note_public: blockForm.notePublic,
+      };
+      setBlockedSlots(bs => bs.map(b => b.id === editBlock.id ? updated : b));
+      closeBlockModal();
+    } finally {
+      setBlockActionLoading(null);
+    }
+  }
+
   async function deleteBlock(id: number) {
     setBlockActionLoading(id);
     try {
@@ -486,14 +541,26 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
                   const handleClick = res
                     ? () => setPopup(res)
                     : blockObj
-                      ? () => setBlockPopup(blockObj)
+                      ? () => openEditBlock(blockObj)
                       : past
                         ? undefined
                         : () => clickCell(d, h);
                   return (
                     <div key={key} className={cls} onClick={handleClick}>
                       {res && <span className="sk-admin-cal-name">{res.name}</span>}
-                      {isBlocked && <span className="sk-admin-cal-blocked-label">Blokováno</span>}
+                      {isBlocked && blockObj && (
+                        <div className="sk-admin-cal-blocked-content">
+                          <span className="sk-admin-cal-blocked-label">Blokováno</span>
+                          {blockObj.note && (
+                            <span className="sk-admin-cal-blocked-note">
+                              {blockObj.note}
+                              <span className={`sk-admin-cal-blocked-note-badge ${blockObj.note_public ? 'pub' : 'priv'}`}>
+                                {blockObj.note_public ? 'V' : 'N'}
+                              </span>
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -552,7 +619,7 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
             <h4 className="sk-admin-section-head" style={{ marginTop: 32 }}>Blokované termíny</h4>
             <div className="sk-admin-block-list">
               {blockedSlots.map(b => (
-                <div key={b.id} className="sk-admin-block-item" onClick={() => setBlockPopup(b)} style={{ cursor: 'pointer' }}>
+                <div key={b.id} className="sk-admin-block-item" onClick={() => openEditBlock(b)} style={{ cursor: 'pointer' }}>
                   <Icon.ban size={14} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div>{blockLabel(b)}</div>
@@ -843,139 +910,119 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
         </div>
       )}
 
-      {/* ---- Modal: přidat blokování ---- */}
-      {blockModal && (
-        <div className="sk-admin-popup-overlay" onClick={() => setBlockModal(false)}>
-          <div className="sk-admin-popup sk-admin-add-modal" onClick={e => e.stopPropagation()}>
-            <div className="sk-admin-popup-header">
-              <button className="sk-admin-popup-close" onClick={() => setBlockModal(false)} aria-label="Zavřít">
-                <Icon.close size={18} />
-              </button>
-              <div className="sk-admin-popup-name">Přidat blokování</div>
-              <div className="sk-admin-popup-when">Termín bude nedostupný pro veřejnost</div>
-            </div>
-            <div className="sk-admin-add-form">
-              <div className="sk-admin-add-field">
-                <label>Typ</label>
-                <div style={{ display: 'flex', gap: 16 }}>
-                  {(['recurring', 'specific'] as const).map(val => (
-                    <label key={val} style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer', fontSize: 13 }}>
-                      <input type="radio" name="block-type" value={val}
-                        checked={blockForm.type === val}
-                        onChange={() => setBlockForm(f => ({ ...f, type: val }))} />
-                      {val === 'recurring' ? 'Pravidelně (každý týden)' : 'Konkrétní datum'}
-                    </label>
-                  ))}
-                </div>
+      {/* ---- Modal: blokování (vytvoření i editace) ---- */}
+      {(blockModal || editBlock !== null) && (() => {
+        const isEdit = editBlock !== null;
+        const saving = isEdit ? blockActionLoading === editBlock!.id : blockActionLoading === 'add';
+        const disabled = saving ||
+          (blockForm.type === 'specific' && !blockForm.date) ||
+          (!blockForm.allDay && blockForm.endHour <= blockForm.startHour);
+        return (
+          <div className="sk-admin-popup-overlay" onClick={closeBlockModal}>
+            <div className="sk-admin-popup sk-admin-add-modal" onClick={e => e.stopPropagation()}>
+              <div className="sk-admin-popup-header">
+                <button className="sk-admin-popup-close" onClick={closeBlockModal} aria-label="Zavřít">
+                  <Icon.close size={18} />
+                </button>
+                <div className="sk-admin-popup-name">{isEdit ? 'Upravit blokování' : 'Přidat blokování'}</div>
+                <div className="sk-admin-popup-when">Termín bude nedostupný pro veřejnost</div>
               </div>
-
-              {blockForm.type === 'recurring' ? (
+              <div className="sk-admin-add-form">
                 <div className="sk-admin-add-field">
-                  <label>Den v týdnu</label>
-                  <select className="sk-admin-add-input"
-                    value={blockForm.dow}
-                    onChange={e => setBlockForm(f => ({ ...f, dow: +e.target.value }))}>
-                    {DOW_LONG.map((name, i) => <option key={i} value={i}>{name}</option>)}
-                  </select>
+                  <label>Typ</label>
+                  <div style={{ display: 'flex', gap: 16 }}>
+                    {(['recurring', 'specific'] as const).map(val => (
+                      <label key={val} style={{ display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer', fontSize: 13 }}>
+                        <input type="radio" name="block-type" value={val}
+                          checked={blockForm.type === val}
+                          onChange={() => setBlockForm(f => ({ ...f, type: val }))} />
+                        {val === 'recurring' ? 'Pravidelně (každý týden)' : 'Konkrétní datum'}
+                      </label>
+                    ))}
+                  </div>
                 </div>
-              ) : (
-                <div className="sk-admin-add-field">
-                  <label>Datum</label>
-                  <input type="date" className="sk-admin-add-input"
-                    value={blockForm.date}
-                    onChange={e => setBlockForm(f => ({ ...f, date: e.target.value }))} />
-                </div>
-              )}
 
-              <div className="sk-admin-add-field">
-                <label>Hodiny</label>
-                <label style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 13, cursor: 'pointer', marginBottom: 6 }}>
-                  <input type="checkbox" checked={blockForm.allDay}
-                    onChange={e => setBlockForm(f => ({ ...f, allDay: e.target.checked }))} />
-                  Celý den
-                </label>
-                {!blockForm.allDay && (
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                {blockForm.type === 'recurring' ? (
+                  <div className="sk-admin-add-field">
+                    <label>Den v týdnu</label>
                     <select className="sk-admin-add-input"
-                      value={blockForm.startHour}
-                      onChange={e => {
-                        const v = +e.target.value;
-                        setBlockForm(f => ({ ...f, startHour: v, endHour: Math.max(f.endHour, v + 1) }));
-                      }}>
-                      {HOURS.map(h => <option key={h} value={h}>{h}:00</option>)}
-                    </select>
-                    <span style={{ color: 'var(--sk-mute)', flexShrink: 0 }}>–</span>
-                    <select className="sk-admin-add-input"
-                      value={blockForm.endHour}
-                      onChange={e => setBlockForm(f => ({ ...f, endHour: +e.target.value }))}>
-                      {HOURS.filter(h => h > blockForm.startHour).map(h => (
-                        <option key={h} value={h}>{h}:00</option>
-                      ))}
-                      <option value={HOUR_MAX + 1}>{HOUR_MAX + 1}:00</option>
+                      value={blockForm.dow}
+                      onChange={e => setBlockForm(f => ({ ...f, dow: +e.target.value }))}>
+                      {DOW_LONG.map((name, i) => <option key={i} value={i}>{name}</option>)}
                     </select>
                   </div>
+                ) : (
+                  <div className="sk-admin-add-field">
+                    <label>Datum</label>
+                    <input type="date" className="sk-admin-add-input"
+                      value={blockForm.date}
+                      onChange={e => setBlockForm(f => ({ ...f, date: e.target.value }))} />
+                  </div>
                 )}
-              </div>
 
-              <div className="sk-admin-add-field">
-                <label>Poznámka <span className="sk-admin-opt">(nepovinné)</span></label>
-                <textarea className="sk-admin-add-input" rows={2}
-                  placeholder="Např. zavřeno kvůli opravě kurtu…"
-                  value={blockForm.note}
-                  onChange={e => setBlockForm(f => ({ ...f, note: e.target.value }))} />
-              </div>
-              <div className="sk-admin-add-field">
-                <label style={{ display: 'flex', gap: 7, alignItems: 'center', cursor: 'pointer', fontWeight: 400, color: 'var(--sk-ink)' }}>
-                  <input type="checkbox" checked={blockForm.notePublic}
-                    onChange={e => setBlockForm(f => ({ ...f, notePublic: e.target.checked }))} />
-                  Poznámka viditelná zákazníkům
-                </label>
-              </div>
-            </div>
-            <div className="sk-admin-popup-footer">
-              <button className="sk-admin-popup-btn confirm"
-                onClick={() => void submitAddBlock()}
-                disabled={blockActionLoading === 'add' ||
-                  (blockForm.type === 'specific' && !blockForm.date) ||
-                  (!blockForm.allDay && blockForm.endHour <= blockForm.startHour)}>
-                {blockActionLoading === 'add' ? 'Ukládám…' : 'Přidat blokování'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+                <div className="sk-admin-add-field">
+                  <label>Hodiny</label>
+                  <label style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 13, cursor: 'pointer', marginBottom: 6 }}>
+                    <input type="checkbox" checked={blockForm.allDay}
+                      onChange={e => setBlockForm(f => ({ ...f, allDay: e.target.checked }))} />
+                    Celý den
+                  </label>
+                  {!blockForm.allDay && (
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <select className="sk-admin-add-input"
+                        value={blockForm.startHour}
+                        onChange={e => {
+                          const v = +e.target.value;
+                          setBlockForm(f => ({ ...f, startHour: v, endHour: Math.max(f.endHour, v + 1) }));
+                        }}>
+                        {HOURS.map(h => <option key={h} value={h}>{h}:00</option>)}
+                      </select>
+                      <span style={{ color: 'var(--sk-mute)', flexShrink: 0 }}>–</span>
+                      <select className="sk-admin-add-input"
+                        value={blockForm.endHour}
+                        onChange={e => setBlockForm(f => ({ ...f, endHour: +e.target.value }))}>
+                        {HOURS.filter(h => h > blockForm.startHour).map(h => (
+                          <option key={h} value={h}>{h}:00</option>
+                        ))}
+                        <option value={HOUR_MAX + 1}>{HOUR_MAX + 1}:00</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
 
-      {/* ---- Popup: detail blokování ---- */}
-      {blockPopup && (
-        <div className="sk-admin-popup-overlay" onClick={() => setBlockPopup(null)}>
-          <div className="sk-admin-popup" onClick={e => e.stopPropagation()}>
-            <div className="sk-admin-popup-header" style={{ background: 'var(--sk-mute)' }}>
-              <button className="sk-admin-popup-close" onClick={() => setBlockPopup(null)} aria-label="Zavřít">
-                <Icon.close size={18} />
-              </button>
-              <div className="sk-admin-popup-name">Blokovaný termín</div>
-              <div className="sk-admin-popup-when">{blockLabel(blockPopup)}</div>
-            </div>
-            {blockPopup.note && (
-              <div className="sk-admin-popup-body">
-                <div className="sk-admin-block-note-row">
-                  <span className="sk-admin-block-note-text">{blockPopup.note}</span>
-                  <span className={`sk-admin-block-note-badge ${blockPopup.note_public ? 'public' : 'private'}`}>
-                    {blockPopup.note_public ? 'Veřejná' : 'Neveřejná'}
-                  </span>
+                <div className="sk-admin-add-field">
+                  <label>Poznámka <span className="sk-admin-opt">(nepovinné)</span></label>
+                  <textarea className="sk-admin-add-input" rows={2}
+                    placeholder="Např. zavřeno kvůli opravě kurtu…"
+                    value={blockForm.note}
+                    onChange={e => setBlockForm(f => ({ ...f, note: e.target.value }))} />
+                </div>
+                <div className="sk-admin-add-field">
+                  <label style={{ display: 'flex', gap: 7, alignItems: 'center', cursor: 'pointer', fontWeight: 400, color: 'var(--sk-ink)' }}>
+                    <input type="checkbox" checked={blockForm.notePublic}
+                      onChange={e => setBlockForm(f => ({ ...f, notePublic: e.target.checked }))} />
+                    Poznámka viditelná zákazníkům
+                  </label>
                 </div>
               </div>
-            )}
-            <div className="sk-admin-popup-footer">
-              <button className="sk-admin-popup-btn delete"
-                onClick={() => { void deleteBlock(blockPopup.id); setBlockPopup(null); }}
-                disabled={blockActionLoading === blockPopup.id}>
-                {blockActionLoading === blockPopup.id ? 'Mažu…' : 'Odstranit blokování'}
-              </button>
+              <div className="sk-admin-popup-footer">
+                {isEdit && (
+                  <button className="sk-admin-popup-btn delete"
+                    onClick={() => { void deleteBlock(editBlock!.id); closeBlockModal(); }}
+                    disabled={saving}>
+                    {blockActionLoading === editBlock!.id ? 'Mažu…' : 'Odstranit'}
+                  </button>
+                )}
+                <button className="sk-admin-popup-btn confirm"
+                  onClick={() => isEdit ? void submitEditBlock() : void submitAddBlock()}
+                  disabled={disabled}>
+                  {saving ? 'Ukládám…' : isEdit ? 'Uložit změny' : 'Přidat blokování'}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }

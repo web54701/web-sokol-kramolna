@@ -436,6 +436,32 @@ async function handlePostBlocked(request: Request, env: Env): Promise<Response> 
   return json({ ok: true, id: result.meta.last_row_id }, 201);
 }
 
+async function handlePatchBlocked(request: Request, env: Env): Promise<Response> {
+  const url = new URL(request.url);
+  const idStr = url.pathname.split('/').pop();
+  const id = idStr ? parseInt(idStr, 10) : NaN;
+  if (isNaN(id)) return json({ error: 'Invalid id' }, 400);
+
+  const body = await request.json() as BlockedSlotBody;
+  const { type, dow, date, hours, note, note_public } = body;
+
+  if (!type) return json({ error: 'Chybí type.' }, 400);
+
+  await env.DB.prepare(
+    'UPDATE blocked_slots SET type=?, dow=?, date=?, hours=?, note=?, note_public=? WHERE id=?'
+  ).bind(
+    type,
+    type === 'recurring' ? (dow ?? null) : null,
+    type === 'specific' ? (date ?? null) : null,
+    hours != null ? JSON.stringify(hours) : null,
+    note ?? '',
+    note_public ? 1 : 0,
+    id,
+  ).run();
+
+  return json({ ok: true });
+}
+
 async function handleDeleteBlocked(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
   const idStr = url.pathname.split('/').pop();
@@ -558,6 +584,7 @@ export default {
 
     if (pathname.startsWith('/api/blocked/')) {
       if (method === 'DELETE') return handleDeleteBlocked(request, env);
+      if (method === 'PATCH') return handlePatchBlocked(request, env);
       return new Response('Method Not Allowed', { status: 405 });
     }
 
