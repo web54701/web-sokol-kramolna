@@ -714,6 +714,7 @@ textarea.skp-input { height: 80px; padding-top: 11px; resize: none; }
   border-right: 1px solid var(--sk-line);
   border-bottom: 1px solid var(--sk-line-soft);
   padding: 3px 5px;
+  cursor: pointer;
   transition: background .12s;
 }
 .sk-admin-cal-cell.booked {
@@ -768,10 +769,16 @@ textarea.skp-input { height: 80px; padding-top: 11px; resize: none; }
   background: #fdeec8; color: #7a5c00;
 }
 
+/* --- Legenda + akční tlačítka (společný řádek) --- */
+.sk-admin-legend-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 8px;
+  margin-bottom: 10px;
+}
+
 /* --- Legenda kalendáře --- */
 .sk-admin-legend {
-  display: flex; align-items: center; gap: 10px;
-  margin-bottom: 10px;
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
 }
 .sk-admin-legend-item {
   display: inline-flex; align-items: center; gap: 6px;
@@ -1004,6 +1011,42 @@ textarea.skp-input { height: 80px; padding-top: 11px; resize: none; }
   transition: background .1s;
 }
 .sk-admin-name-cancel-btn:hover { background: rgba(255,255,255,.22); }
+
+/* --- Editace e-mailu / telefonu v popup body --- */
+.sk-admin-body-view-row { justify-content: flex-start; }
+.sk-admin-body-link {
+  color: var(--sk-green-800); text-decoration: none; flex: 1;
+}
+.sk-admin-body-link:hover { text-decoration: underline; }
+.sk-admin-muted-val { color: var(--sk-mute); flex: 1; }
+.sk-admin-body-edit-btn {
+  margin-left: auto; background: none; border: none; cursor: pointer;
+  color: var(--sk-mute); padding: 2px 4px; border-radius: 4px; display: flex;
+  transition: color .1s, background .1s; flex-shrink: 0;
+}
+.sk-admin-body-edit-btn:hover { color: var(--sk-green-800); background: var(--sk-cream-200); }
+.sk-admin-body-edit-row { gap: 6px; }
+.sk-admin-body-input {
+  flex: 1; min-width: 0;
+  border: 1px solid var(--sk-line); border-radius: 6px;
+  padding: 3px 7px; font: inherit; font-size: 13px; color: var(--sk-ink);
+  background: white; outline: none;
+}
+.sk-admin-body-input:focus { border-color: var(--sk-green-400); }
+.sk-admin-body-save-btn {
+  padding: 3px 8px; border-radius: 5px; border: 0;
+  background: var(--sk-green-800); color: white;
+  font: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
+  white-space: nowrap; flex-shrink: 0; transition: opacity .1s;
+}
+.sk-admin-body-save-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.sk-admin-body-cancel-btn {
+  padding: 3px 6px; border-radius: 5px; border: 1px solid var(--sk-line);
+  background: white; color: var(--sk-mute);
+  font: inherit; font-size: 12px; cursor: pointer; white-space: nowrap; flex-shrink: 0;
+  transition: border-color .1s;
+}
+.sk-admin-body-cancel-btn:hover { border-color: var(--sk-green-400); color: var(--sk-ink); }
 
 /* --- Modální formulář (přidat rezervaci / blokování) --- */
 .sk-admin-add-modal { max-width: 400px; }

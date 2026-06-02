@@ -310,10 +310,12 @@ async function handlePatchReservation(request: Request, env: Env): Promise<Respo
 
   if (isNaN(id)) return json({ error: 'Invalid id' }, 400);
 
-  const body = await request.json() as { hours?: number[]; name?: string };
-  const { hours, name } = body;
+  const body = await request.json() as { hours?: number[]; name?: string; email?: string; phone?: string };
+  const { hours, name, email, phone } = body;
 
-  if (hours === undefined && name === undefined) return json({ error: 'Nothing to update' }, 400);
+  if (hours === undefined && name === undefined && email === undefined && phone === undefined) {
+    return json({ error: 'Nothing to update' }, 400);
+  }
 
   const row = await env.DB.prepare(
     'SELECT activity, date FROM reservations WHERE id = ?'
@@ -345,9 +347,15 @@ async function handlePatchReservation(request: Request, env: Env): Promise<Respo
   if (name !== undefined) {
     const trimmed = name.trim();
     if (!trimmed) return json({ error: 'Jméno nesmí být prázdné.' }, 400);
-    await env.DB.prepare(
-      'UPDATE reservations SET name = ? WHERE id = ?'
-    ).bind(trimmed, id).run();
+    await env.DB.prepare('UPDATE reservations SET name = ? WHERE id = ?').bind(trimmed, id).run();
+  }
+
+  if (email !== undefined) {
+    await env.DB.prepare('UPDATE reservations SET email = ? WHERE id = ?').bind(email.trim(), id).run();
+  }
+
+  if (phone !== undefined) {
+    await env.DB.prepare('UPDATE reservations SET phone = ? WHERE id = ?').bind(phone.trim(), id).run();
   }
 
   return json({ ok: true });

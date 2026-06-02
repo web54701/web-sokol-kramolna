@@ -83,6 +83,8 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
   const [actionLoading, setActionLoading] = useState<'confirm' | 'delete' | 'patch' | null>(null);
   const [editHours, setEditHours] = useState<number[] | null>(null);
   const [editName, setEditName] = useState<string | null>(null);
+  const [editEmail, setEditEmail] = useState<string | null>(null);
+  const [editPhone, setEditPhone] = useState<string | null>(null);
 
   // --- Výběr buněk pro přidání rezervace ---
   const [sel, setSel] = useState<SelState>({ dayNo: null, slots: [] });
@@ -133,6 +135,8 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
   useEffect(() => {
     setEditHours(null);
     setEditName(null);
+    setEditEmail(null);
+    setEditPhone(null);
   }, [popup?.id]);
 
   // Mapa rezervací: "YYYY-MM-DD-h" → Reservation
@@ -232,6 +236,28 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
       setReservations(rs => rs.map(r => r.id === id ? { ...r, name } : r));
       setPopup(p => p?.id === id ? { ...p, name } : p);
       setEditName(null);
+    } finally {
+      setActionLoading(null);
+    }
+  }
+
+  async function patchReservationField(id: number, field: 'email' | 'phone', value: string) {
+    setActionLoading('patch');
+    try {
+      const res = await fetch(`/api/reservations/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [field]: value }),
+      });
+      if (!res.ok) {
+        const data = await res.json() as { error?: string };
+        alert(data.error ?? 'Chyba při ukládání.');
+        return;
+      }
+      setReservations(rs => rs.map(r => r.id === id ? { ...r, [field]: value } : r));
+      setPopup(p => p?.id === id ? { ...p, [field]: value } : p);
+      if (field === 'email') setEditEmail(null);
+      if (field === 'phone') setEditPhone(null);
     } finally {
       setActionLoading(null);
     }
@@ -370,19 +396,11 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
     <div className="skp-scroll">
       <div className="sk-admin-wrap">
 
-        {/* ---- Řádek 1: název + akční tlačítka ---- */}
+        {/* ---- Řádek 1: název ---- */}
         <div className="sk-admin-bar">
           <span className="sk-admin-title">
             <Icon.cal /> Rezervace · {rangeLabel}
           </span>
-          <div className="sk-admin-actions">
-            <button className="sk-admin-add-btn" onClick={openAddModal}>
-              <Icon.plus size={15} /> Přidat rezervaci
-            </button>
-            <button className="sk-admin-add-btn secondary" onClick={() => setBlockModal(true)}>
-              <Icon.ban size={15} /> Přidat blokování
-            </button>
-          </div>
         </div>
 
         {/* ---- Řádek 2: navigace týdne ---- */}
@@ -398,16 +416,26 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
           </button>
         </div>
 
-        {/* ---- Legenda ---- */}
-        <div className="sk-admin-legend">
-          <span className="sk-admin-legend-item confirmed">Potvrzeno</span>
-          <span className="sk-admin-legend-item unconfirmed">Čeká na potvrzení</span>
-          {blockedSlots.length > 0 && (
-            <span className="sk-admin-legend-item blocked">Blokováno</span>
-          )}
-          {sel.slots.length > 0 && (
-            <span className="sk-admin-legend-item selected">Váš výběr</span>
-          )}
+        {/* ---- Legenda + tlačítka na stejném řádku ---- */}
+        <div className="sk-admin-legend-bar">
+          <div className="sk-admin-legend">
+            <span className="sk-admin-legend-item confirmed">Potvrzeno</span>
+            <span className="sk-admin-legend-item unconfirmed">Čeká na potvrzení</span>
+            {blockedSlots.length > 0 && (
+              <span className="sk-admin-legend-item blocked">Blokováno</span>
+            )}
+            {sel.slots.length > 0 && (
+              <span className="sk-admin-legend-item selected">Váš výběr</span>
+            )}
+          </div>
+          <div className="sk-admin-actions">
+            <button className="sk-admin-add-btn" onClick={openAddModal}>
+              <Icon.plus size={15} /> Přidat rezervaci
+            </button>
+            <button className="sk-admin-add-btn secondary" onClick={() => setBlockModal(true)}>
+              <Icon.ban size={15} /> Přidat blokování
+            </button>
+          </div>
         </div>
 
         {/* ---- Kalendář ---- */}
@@ -623,22 +651,62 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
               </div>
 
               <div className="sk-admin-popup-body">
-                {popup.email ? (
-                  <a href={`mailto:${popup.email}`} className="sk-admin-popup-row">
-                    <Icon.email size={15} /><span>{popup.email}</span>
-                  </a>
+                {/* E-mail */}
+                {editEmail === null ? (
+                  <div className="sk-admin-popup-row sk-admin-body-view-row">
+                    <Icon.email size={15} />
+                    {popup.email
+                      ? <a href={`mailto:${popup.email}`} className="sk-admin-body-link">{popup.email}</a>
+                      : <span className="sk-admin-muted-val">E-mail nevyplněn</span>
+                    }
+                    <button className="sk-admin-body-edit-btn" onClick={() => setEditEmail(popup.email)} title="Upravit e-mail">
+                      <Icon.pencil size={12} />
+                    </button>
+                  </div>
                 ) : (
-                  <div className="sk-admin-popup-row muted">
-                    <Icon.email size={15} /><span>E-mail nevyplněn</span>
+                  <div className="sk-admin-popup-row sk-admin-body-edit-row">
+                    <Icon.email size={15} />
+                    <input className="sk-admin-body-input" value={editEmail}
+                      onChange={e => setEditEmail(e.target.value)} autoFocus
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') void patchReservationField(popup.id, 'email', editEmail.trim());
+                        if (e.key === 'Escape') setEditEmail(null);
+                      }} />
+                    <button className="sk-admin-body-save-btn"
+                      onClick={() => void patchReservationField(popup.id, 'email', editEmail.trim())}
+                      disabled={actionLoading !== null}>
+                      {actionLoading === 'patch' ? '…' : 'Uložit'}
+                    </button>
+                    <button className="sk-admin-body-cancel-btn" onClick={() => setEditEmail(null)}>Zrušit</button>
                   </div>
                 )}
-                {popup.phone ? (
-                  <a href={`tel:${popup.phone.replace(/\s/g, '')}`} className="sk-admin-popup-row">
-                    <Icon.phone size={15} /><span>{popup.phone}</span>
-                  </a>
+                {/* Telefon */}
+                {editPhone === null ? (
+                  <div className="sk-admin-popup-row sk-admin-body-view-row">
+                    <Icon.phone size={15} />
+                    {popup.phone
+                      ? <a href={`tel:${popup.phone.replace(/\s/g, '')}`} className="sk-admin-body-link">{popup.phone}</a>
+                      : <span className="sk-admin-muted-val">Telefon nevyplněn</span>
+                    }
+                    <button className="sk-admin-body-edit-btn" onClick={() => setEditPhone(popup.phone)} title="Upravit telefon">
+                      <Icon.pencil size={12} />
+                    </button>
+                  </div>
                 ) : (
-                  <div className="sk-admin-popup-row muted">
-                    <Icon.phone size={15} /><span>Telefon nevyplněn</span>
+                  <div className="sk-admin-popup-row sk-admin-body-edit-row">
+                    <Icon.phone size={15} />
+                    <input className="sk-admin-body-input" value={editPhone}
+                      onChange={e => setEditPhone(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') void patchReservationField(popup.id, 'phone', editPhone.trim());
+                        if (e.key === 'Escape') setEditPhone(null);
+                      }} />
+                    <button className="sk-admin-body-save-btn"
+                      onClick={() => void patchReservationField(popup.id, 'phone', editPhone.trim())}
+                      disabled={actionLoading !== null}>
+                      {actionLoading === 'patch' ? '…' : 'Uložit'}
+                    </button>
+                    <button className="sk-admin-body-cancel-btn" onClick={() => setEditPhone(null)}>Zrušit</button>
                   </div>
                 )}
               </div>
