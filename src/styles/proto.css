@@ -753,13 +753,13 @@ textarea.skp-input { height: 80px; padding-top: 11px; resize: none; }
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
-  font-size: 9px; color: var(--sk-ink-soft); line-height: 1.3; word-break: break-word;
+  font-size: 11px; color: var(--sk-ink-soft); line-height: 1.3; word-break: break-word;
 }
 .sk-admin-cal-blocked-note-badge {
   display: inline-block;
-  font-size: 8px; font-weight: 700;
-  padding: 0 3px; border-radius: 3px; margin-left: 2px;
-  vertical-align: middle;
+  font-size: 10px; font-weight: 600;
+  padding: 1px 5px; border-radius: 4px; margin-left: 3px;
+  vertical-align: middle; white-space: nowrap;
 }
 .sk-admin-cal-blocked-note-badge.pub { background: var(--sk-green-100); color: var(--sk-green-700); }
 .sk-admin-cal-blocked-note-badge.priv { background: var(--sk-cream-300); color: var(--sk-mute); }

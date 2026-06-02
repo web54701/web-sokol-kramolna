@@ -555,7 +555,7 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
                             <span className="sk-admin-cal-blocked-note">
                               {blockObj.note}
                               <span className={`sk-admin-cal-blocked-note-badge ${blockObj.note_public ? 'pub' : 'priv'}`}>
-                                {blockObj.note_public ? 'V' : 'N'}
+                                {blockObj.note_public ? 'Veřejný' : 'Neveřejný'}
                               </span>
                             </span>
                           )}
