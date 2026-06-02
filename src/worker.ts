@@ -57,6 +57,8 @@ interface BlockedSlotRow {
   dow: number | null;
   date: string | null;
   hours: string | null;
+  note: string;
+  note_public: number;
 }
 
 interface BlockedSlotBody {
@@ -65,6 +67,8 @@ interface BlockedSlotBody {
   dow?: number;
   date?: string;
   hours?: number[] | null;
+  note?: string;
+  note_public?: boolean;
 }
 
 const ACTIVITY_LABELS: Record<string, string> = {
@@ -405,6 +409,7 @@ async function handleGetBlocked(request: Request, env: Env): Promise<Response> {
   const slots = results.map(r => ({
     ...r,
     hours: r.hours ? JSON.parse(r.hours) as number[] : null,
+    note_public: r.note_public === 1,
   }));
   return json(slots);
 }
@@ -418,12 +423,14 @@ async function handlePostBlocked(request: Request, env: Env): Promise<Response> 
   if (type === 'specific' && !date) return json({ error: 'Chybí date.' }, 400);
 
   const result = await env.DB.prepare(
-    'INSERT INTO blocked_slots (activity, type, dow, date, hours) VALUES (?, ?, ?, ?, ?)'
+    'INSERT INTO blocked_slots (activity, type, dow, date, hours, note, note_public) VALUES (?, ?, ?, ?, ?, ?, ?)'
   ).bind(
     activity, type,
     type === 'recurring' ? (dow ?? null) : null,
     type === 'specific' ? (date ?? null) : null,
     hours != null ? JSON.stringify(hours) : null,
+    body.note ?? '',
+    body.note_public ? 1 : 0,
   ).run();
 
   return json({ ok: true, id: result.meta.last_row_id }, 201);

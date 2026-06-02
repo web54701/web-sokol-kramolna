@@ -13,6 +13,8 @@ interface BlockedSlot {
   dow: number | null;
   date: string | null;
   hours: number[] | null;
+  note: string;
+  note_public: boolean;
 }
 
 type Props = {
@@ -106,22 +108,23 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
     ? `${fmtDM(visibleWeek[0])} – ${fmtDMY(visibleWeek[visibleWeek.length - 1])}`
     : `${fmtDM(week[0])} – ${fmtDMY(week[6])}`;
 
-  function isSlotBlocked(date: Date, h: number): boolean {
+  function findBlock(date: Date, h: number): BlockedSlot | undefined {
     const dateStr = toISODate(date);
     const dow = date.getDay();
     for (const b of blockedSlots) {
       if (b.type === 'recurring' && b.dow !== dow) continue;
       if (b.type === 'specific' && b.date !== dateStr) continue;
-      if (b.hours === null || b.hours.includes(h)) return true;
+      if (b.hours === null || b.hours.includes(h)) return b;
     }
-    return false;
+    return undefined;
   }
 
-  function slotInfo(date: Date, h: number): { st: string; remaining?: number } {
+  function slotInfo(date: Date, h: number): { st: string; remaining?: number; blockNote?: string } {
     const dn = epochDay(date);
     const isToday = dn === epochDay(NOW);
     if (dn < epochDay(NOW) || (isToday && h <= NOW.getHours())) return { st: 'past' };
-    if (isSlotBlocked(date, h)) return { st: 'blocked' };
+    const block = findBlock(date, h);
+    if (block) return { st: 'blocked', blockNote: block.note_public ? block.note : undefined };
     const count = busySlots.get(`${toISODate(date)}-${h}`) ?? 0;
     if (mode === 'tenis') {
       return { st: count > 0 ? 'busy' : 'free' };
@@ -414,7 +417,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
                     key={d.getTime() + '-' + h}
                     className={cls}
                     onClick={() => clickSlot(d, h, info.st)}
-                    title={info.st === 'free' ? `${DOW[d.getDay()]} ${fmtDM(d)} ${h}:00 – ${h + 1}:00` : info.st === 'past' ? 'Již proběhlo' : (mode === 'gym' ? 'Plně obsazeno' : 'Obsazeno')}
+                    title={info.st === 'free' ? `${DOW[d.getDay()]} ${fmtDM(d)} ${h}:00 – ${h + 1}:00` : info.st === 'past' ? 'Již proběhlo' : info.st === 'blocked' ? (info.blockNote || 'Nedostupné') : (mode === 'gym' ? 'Plně obsazeno' : 'Obsazeno')}
                   >
                     {mode === 'gym' && (info.st === 'free' || info.st === 'full') && (
                       <span className="cap">{info.st === 'full' ? '0' : info.remaining}</span>

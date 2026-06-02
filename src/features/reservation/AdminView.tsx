@@ -30,6 +30,8 @@ type BlockedSlot = {
   dow: number | null;
   date: string | null;
   hours: number[] | null;
+  note: string;
+  note_public: boolean;
 };
 
 type AddForm = {
@@ -50,6 +52,8 @@ type BlockForm = {
   allDay: boolean;
   startHour: number;
   endHour: number;
+  note: string;
+  notePublic: boolean;
 };
 
 type SelState = { dayNo: number | null; slots: number[] };
@@ -97,8 +101,10 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
   // --- Blokování ---
   const [blockedSlots, setBlockedSlots] = useState<BlockedSlot[]>([]);
   const [blockModal, setBlockModal] = useState(false);
+  const [blockPopup, setBlockPopup] = useState<BlockedSlot | null>(null);
   const [blockForm, setBlockForm] = useState<BlockForm>({
     type: 'recurring', dow: 1, date: toISODate(NOW), allDay: true, startHour: 8, endHour: 20,
+    note: '', notePublic: false,
   });
   const [blockActionLoading, setBlockActionLoading] = useState<number | 'add' | null>(null);
 
@@ -148,19 +154,22 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
     return m;
   }, [reservations]);
 
-  // Set blokovaných slotů pro aktuální týden
-  const blockedSet = useMemo(() => {
-    const s = new Set<string>();
+  // Mapa blokovaných slotů pro aktuální týden: klíč = "YYYY-MM-DD-h" → BlockedSlot
+  const blockedMap = useMemo(() => {
+    const m = new Map<string, BlockedSlot>();
     for (const b of blockedSlots) {
       for (const d of week) {
         const dateStr = toISODate(d);
         if (b.type === 'recurring' && b.dow !== d.getDay()) continue;
         if (b.type === 'specific' && b.date !== dateStr) continue;
         const hs = b.hours ?? HOURS;
-        for (const h of hs) s.add(`${dateStr}-${h}`);
+        for (const h of hs) {
+          const key = `${dateStr}-${h}`;
+          if (!m.has(key)) m.set(key, b);
+        }
       }
     }
-    return s;
+    return m;
   }, [blockedSlots, week]);
 
   // --- Výběr buněk (pro přidání rezervace) ---
@@ -356,6 +365,8 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
           dow: blockForm.type === 'recurring' ? blockForm.dow : undefined,
           date: blockForm.type === 'specific' ? blockForm.date : undefined,
           hours,
+          note: blockForm.note,
+          note_public: blockForm.notePublic,
         }),
       });
       if (!res.ok) { alert('Chyba při ukládání.'); return; }
@@ -364,7 +375,7 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
         id: data.id, activity: mode, type: blockForm.type,
         dow: blockForm.type === 'recurring' ? blockForm.dow : null,
         date: blockForm.type === 'specific' ? blockForm.date : null,
-        hours,
+        hours, note: blockForm.note, note_public: blockForm.notePublic,
       };
       setBlockedSlots(bs => [...bs, newBlock]);
       setBlockModal(false);
@@ -460,7 +471,8 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
                 {week.map((d) => {
                   const key = `${toISODate(d)}-${h}`;
                   const res = resMap.get(key);
-                  const isBlocked = blockedSet.has(key) && !res;
+                  const blockObj = !res ? blockedMap.get(key) : undefined;
+                  const isBlocked = !!blockObj;
                   const past = toISODate(d) < nowISO;
                   const isSel = sel.dayNo === epochDay(d) && sel.slots.includes(h);
                   const cls = [
@@ -473,9 +485,11 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
                   ].filter(Boolean).join(' ');
                   const handleClick = res
                     ? () => setPopup(res)
-                    : isBlocked || past
-                      ? undefined
-                      : () => clickCell(d, h);
+                    : blockObj
+                      ? () => setBlockPopup(blockObj)
+                      : past
+                        ? undefined
+                        : () => clickCell(d, h);
                   return (
                     <div key={key} className={cls} onClick={handleClick}>
                       {res && <span className="sk-admin-cal-name">{res.name}</span>}
@@ -538,11 +552,21 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
             <h4 className="sk-admin-section-head" style={{ marginTop: 32 }}>Blokované termíny</h4>
             <div className="sk-admin-block-list">
               {blockedSlots.map(b => (
-                <div key={b.id} className="sk-admin-block-item">
+                <div key={b.id} className="sk-admin-block-item" onClick={() => setBlockPopup(b)} style={{ cursor: 'pointer' }}>
                   <Icon.ban size={14} />
-                  <span>{blockLabel(b)}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div>{blockLabel(b)}</div>
+                    {b.note && (
+                      <div className="sk-admin-block-item-note">
+                        {b.note}
+                        <span className={`sk-admin-block-note-badge ${b.note_public ? 'public' : 'private'}`}>
+                          {b.note_public ? 'Veřejná' : 'Neveřejná'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                   <button className="sk-admin-block-del"
-                    onClick={() => void deleteBlock(b.id)}
+                    onClick={e => { e.stopPropagation(); void deleteBlock(b.id); }}
                     disabled={blockActionLoading === b.id}>
                     {blockActionLoading === b.id ? '…' : <Icon.close size={13} />}
                   </button>
@@ -892,6 +916,21 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
                   </div>
                 )}
               </div>
+
+              <div className="sk-admin-add-field">
+                <label>Poznámka <span className="sk-admin-opt">(nepovinné)</span></label>
+                <textarea className="sk-admin-add-input" rows={2}
+                  placeholder="Např. zavřeno kvůli opravě kurtu…"
+                  value={blockForm.note}
+                  onChange={e => setBlockForm(f => ({ ...f, note: e.target.value }))} />
+              </div>
+              <div className="sk-admin-add-field">
+                <label style={{ display: 'flex', gap: 7, alignItems: 'center', cursor: 'pointer', fontWeight: 400, color: 'var(--sk-ink)' }}>
+                  <input type="checkbox" checked={blockForm.notePublic}
+                    onChange={e => setBlockForm(f => ({ ...f, notePublic: e.target.checked }))} />
+                  Poznámka viditelná zákazníkům
+                </label>
+              </div>
             </div>
             <div className="sk-admin-popup-footer">
               <button className="sk-admin-popup-btn confirm"
@@ -900,6 +939,38 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
                   (blockForm.type === 'specific' && !blockForm.date) ||
                   (!blockForm.allDay && blockForm.endHour <= blockForm.startHour)}>
                 {blockActionLoading === 'add' ? 'Ukládám…' : 'Přidat blokování'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ---- Popup: detail blokování ---- */}
+      {blockPopup && (
+        <div className="sk-admin-popup-overlay" onClick={() => setBlockPopup(null)}>
+          <div className="sk-admin-popup" onClick={e => e.stopPropagation()}>
+            <div className="sk-admin-popup-header" style={{ background: 'var(--sk-mute)' }}>
+              <button className="sk-admin-popup-close" onClick={() => setBlockPopup(null)} aria-label="Zavřít">
+                <Icon.close size={18} />
+              </button>
+              <div className="sk-admin-popup-name">Blokovaný termín</div>
+              <div className="sk-admin-popup-when">{blockLabel(blockPopup)}</div>
+            </div>
+            {blockPopup.note && (
+              <div className="sk-admin-popup-body">
+                <div className="sk-admin-block-note-row">
+                  <span className="sk-admin-block-note-text">{blockPopup.note}</span>
+                  <span className={`sk-admin-block-note-badge ${blockPopup.note_public ? 'public' : 'private'}`}>
+                    {blockPopup.note_public ? 'Veřejná' : 'Neveřejná'}
+                  </span>
+                </div>
+              </div>
+            )}
+            <div className="sk-admin-popup-footer">
+              <button className="sk-admin-popup-btn delete"
+                onClick={() => { void deleteBlock(blockPopup.id); setBlockPopup(null); }}
+                disabled={blockActionLoading === blockPopup.id}>
+                {blockActionLoading === blockPopup.id ? 'Mažu…' : 'Odstranit blokování'}
               </button>
             </div>
           </div>

@@ -1066,6 +1066,19 @@ textarea.skp-input { height: 80px; padding-top: 11px; resize: none; }
 .sk-admin-req { color: var(--sk-rust); }
 .sk-admin-opt { font-weight: 400; color: var(--sk-mute); }
 
+/* --- Popup blokování: poznámka --- */
+.sk-admin-block-note-row {
+  display: flex; align-items: flex-start; gap: 10px;
+  font-size: 14px; color: var(--sk-ink); padding: 4px 0;
+}
+.sk-admin-block-note-text { flex: 1; }
+.sk-admin-block-note-badge {
+  font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 99px;
+  white-space: nowrap; flex-shrink: 0;
+}
+.sk-admin-block-note-badge.public { background: var(--sk-green-100); color: var(--sk-green-700); }
+.sk-admin-block-note-badge.private { background: var(--sk-cream-300); color: var(--sk-mute); }
+
 /* --- Seznam blokování --- */
 .sk-admin-block-list {
   display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px;
@@ -1078,6 +1091,10 @@ textarea.skp-input { height: 80px; padding-top: 11px; resize: none; }
   font-size: 13px; color: var(--sk-ink-soft);
 }
 .sk-admin-block-item > span { flex: 1; }
+.sk-admin-block-item-note {
+  font-size: 12px; color: var(--sk-mute); margin-top: 2px;
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+}
 .sk-admin-block-del {
   background: none; border: 0; cursor: pointer; padding: 2px;
   color: var(--sk-mute); border-radius: 4px; display: flex;
