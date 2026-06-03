@@ -6,6 +6,7 @@ import { DOW, DAY_MS, epochDay, fmtDM, fmtDMY, toISODate, HOURS, weekStart } fro
 interface ApiReservation {
   date: string;
   hours: number[];
+  spots?: number;
 }
 
 interface BlockedSlot {
@@ -51,6 +52,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
   const [busySlots, setBusySlots] = useState<Map<string, number>>(new Map());
   const [blockedSlots, setBlockedSlots] = useState<BlockedSlot[]>([]);
   const [spots, setSpots] = useState(1);
+  const [refreshKey, setRefreshKey] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -86,13 +88,13 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
         for (const r of data as ApiReservation[]) {
           for (const h of r.hours) {
             const key = `${r.date}-${h}`;
-            map.set(key, (map.get(key) ?? 0) + 1);
+            map.set(key, (map.get(key) ?? 0) + (r.spots ?? 1));
           }
         }
         setBusySlots(map);
       })
       .catch(() => { /* při chybě zobrazit vše jako volné */ });
-  }, [week, mode]);
+  }, [week, mode, refreshKey]);
 
   // Načíst blokování
   useEffect(() => {
@@ -230,6 +232,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
     setSel({ dayNo: null, slots: [] });
     setForm((f) => ({ name: f.name, email: f.email, phone: f.phone, note: '', payment: 'hotove' }));
     setTouched(false);
+    setRefreshKey(k => k + 1);
     window.scrollTo(0, 0);
   }
 
@@ -314,17 +317,6 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
     <aside className="skp-summary">
       <h3>Souhrn rezervace</h3>
       <div className="sub">{cfg.court}</div>
-
-      {mode === 'gym' && (
-        <div className="skp-sum-row skp-sum-spots">
-          <span className="k">Počet míst</span>
-          <span className="skp-spots-ctrl">
-            <button className="skp-spots-btn" onClick={() => changeSpots(spots - 1)} disabled={spots <= 1}>−</button>
-            <span className="skp-spots-val">{spots}</span>
-            <button className="skp-spots-btn" onClick={() => changeSpots(spots + 1)} disabled={spots >= cfg.capacity!}>+</button>
-          </span>
-        </div>
-      )}
 
       {hoursCount === 0 ? (
         <div className="skp-sum-empty">
@@ -411,6 +403,17 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
             </button>
           </>
         </div>
+
+        {mode === 'gym' && (
+          <div className="skp-cal-spots">
+            <span className="k">Počet míst</span>
+            <span className="skp-spots-ctrl">
+              <button className="skp-spots-btn" onClick={() => changeSpots(spots - 1)} disabled={spots <= 1}>−</button>
+              <span className="skp-spots-val">{spots}</span>
+              <button className="skp-spots-btn" onClick={() => changeSpots(spots + 1)} disabled={spots >= cfg.capacity!}>+</button>
+            </span>
+          </div>
+        )}
 
         <div className="sk-cal-scroll-outer">
           <div className="sk-cal-scroll" ref={calScrollRef}>

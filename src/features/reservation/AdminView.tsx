@@ -17,6 +17,7 @@ type Reservation = {
   activity: string;
   date: string;
   hours: number[];
+  spots?: number;
   name: string;
   email: string;
   phone: string;
@@ -118,6 +119,9 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
   const [blockModal, setBlockModal] = useState(false);   // create mode
   const [editBlock, setEditBlock] = useState<BlockedSlot | null>(null);  // edit mode
 
+  // --- Slot popup (více rezervací v jedné buňce) ---
+  const [slotPopup, setSlotPopup] = useState<{ date: Date; hour: number; list: Reservation[] } | null>(null);
+
   // --- Nastavení ---
   const [emailVerification, setEmailVerification] = useState(true);
   const [settingsSaving, setSettingsSaving] = useState(false);
@@ -191,11 +195,16 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
     setEditPhone(null);
   }, [popup?.id]);
 
-  // Mapa rezervací: "YYYY-MM-DD-h" → Reservation
+  // Mapa rezervací: "YYYY-MM-DD-h" → Reservation[]
   const resMap = useMemo(() => {
-    const m = new Map<string, Reservation>();
+    const m = new Map<string, Reservation[]>();
     for (const r of reservations) {
-      for (const h of r.hours) m.set(`${r.date}-${h}`, r);
+      for (const h of r.hours) {
+        const key = `${r.date}-${h}`;
+        const arr = m.get(key) ?? [];
+        arr.push(r);
+        m.set(key, arr);
+      }
     }
     return m;
   }, [reservations]);
@@ -590,21 +599,27 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
                 <div className="sk-admin-cal-time">{h}:00</div>
                 {week.map((d) => {
                   const key = `${toISODate(d)}-${h}`;
-                  const res = resMap.get(key);
-                  const blockObj = !res ? blockedMap.get(key) : undefined;
+                  const resList = resMap.get(key) ?? [];
+                  const res = resList[0];
+                  const isBooked = resList.length > 0;
+                  const hasMultiple = resList.length > 1;
+                  const allConfirmed = isBooked && resList.every(r => r.confirmed_at);
+                  const blockObj = !isBooked ? blockedMap.get(key) : undefined;
                   const isBlocked = !!blockObj;
                   const past = toISODate(d) < nowISO;
                   const isSel = sel.dayNo === epochDay(d) && sel.slots.includes(h);
                   const cls = [
                     'sk-admin-cal-cell',
-                    res ? 'booked' : '',
-                    res && !res.confirmed_at ? 'unconfirmed' : '',
+                    isBooked ? 'booked' : '',
+                    isBooked && !allConfirmed ? 'unconfirmed' : '',
                     isBlocked ? 'blocked' : '',
                     past ? 'past' : '',
                     isSel ? 'admin-sel' : '',
                   ].filter(Boolean).join(' ');
-                  const handleClick = res
-                    ? () => setPopup(res)
+                  const handleClick = isBooked
+                    ? hasMultiple
+                      ? () => setSlotPopup({ date: d, hour: h, list: resList })
+                      : () => setPopup(res)
                     : blockObj
                       ? () => openEditBlock(blockObj)
                       : past
@@ -612,7 +627,15 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
                         : () => clickCell(d, h);
                   return (
                     <div key={key} className={cls} onClick={handleClick}>
-                      {res && <span className="sk-admin-cal-name">{res.name}</span>}
+                      {isBooked && !hasMultiple && (
+                        <span className="sk-admin-cal-name">{res.name}</span>
+                      )}
+                      {isBooked && hasMultiple && (
+                        <div className="sk-admin-cal-multi">
+                          <span className="sk-admin-cal-name">{res.name}</span>
+                          <span className="sk-admin-cal-count-badge">+{resList.length - 1}</span>
+                        </div>
+                      )}
                       {isBlocked && blockObj && (
                         <div className="sk-admin-cal-blocked-content">
                           <span className="sk-admin-cal-blocked-label">Blokováno</span>
@@ -885,6 +908,45 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
           </div>
         );
       })()}
+
+      {/* ---- Slot popup: více rezervací v jedné hodině ---- */}
+      {slotPopup && (
+        <div className="sk-admin-popup-overlay" onClick={() => setSlotPopup(null)}>
+          <div className="sk-admin-popup sk-admin-slot-popup" onClick={e => e.stopPropagation()}>
+            <div className="sk-admin-popup-header">
+              <button className="sk-admin-popup-close" onClick={() => setSlotPopup(null)} aria-label="Zavřít">
+                <Icon.close size={18} />
+              </button>
+              <div className="sk-admin-popup-name">{slotPopup.hour}:00 – {slotPopup.hour + 1}:00</div>
+              <div className="sk-admin-popup-when">
+                {DOW[slotPopup.date.getDay()]} {fmtDMY(slotPopup.date)}
+                {' · '}{slotPopup.list.length} {slotPopup.list.length === 1 ? 'rezervace' : slotPopup.list.length < 5 ? 'rezervace' : 'rezervací'}
+                {mode === 'gym' && ` · ${slotPopup.list.reduce((s, r) => s + (r.spots ?? 1), 0)} / ${MODES[mode].capacity} míst`}
+              </div>
+            </div>
+            <div className="sk-admin-slot-list">
+              {slotPopup.list.map(r => (
+                <button
+                  key={r.id}
+                  className="sk-admin-slot-item"
+                  onClick={() => { setSlotPopup(null); setPopup(r); }}
+                >
+                  <div className="sk-admin-slot-item-left">
+                    <span className="sk-admin-slot-item-name">{r.name}</span>
+                    {mode === 'gym' && (r.spots ?? 1) > 1 && (
+                      <span className="sk-admin-slot-item-spots">{r.spots} míst</span>
+                    )}
+                  </div>
+                  {r.confirmed_at
+                    ? <span className="sk-admin-status-badge confirmed">Potvrzeno</span>
+                    : <span className="sk-admin-status-badge unconfirmed">Čeká</span>
+                  }
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ---- Modal: přidat rezervaci ---- */}
       {addModal && addForm && (

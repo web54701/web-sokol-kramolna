@@ -135,6 +135,13 @@
 .skp-cal .sk-cal-slot.full .cap { color: #7a3d12; }
 .skp-cal .sk-cal-slot.blocked { background: var(--sk-blocked); cursor: not-allowed; }
 
+/* počet míst nad kalendářem (gym) */
+.skp-cal-spots {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 14px; font-size: 14px;
+}
+.skp-cal-spots .k { color: var(--sk-mute); font-size: 13px; }
+
 /* tip pod kalendářem */
 .skp-cal-tip {
   margin-top: 12px; font-size: 13px; color: var(--sk-mute);
@@ -797,6 +804,17 @@ textarea.skp-input { height: 80px; padding-top: 11px; resize: none; }
 .sk-admin-cal-cell.booked.unconfirmed .sk-admin-cal-name { color: #7a5c00; }
 .sk-admin-cal-cell.past .sk-admin-cal-name { color: var(--sk-mute); }
 
+/* Multi-reservation cell (gym) */
+.sk-admin-cal-multi {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+  width: 100%; height: 100%; justify-content: center; padding: 3px 6px; box-sizing: border-box;
+}
+.sk-admin-cal-count-badge {
+  font-size: 10px; font-weight: 700; color: var(--sk-green-800);
+  background: rgba(255,255,255,0.65); padding: 0 4px; border-radius: 4px;
+}
+.sk-admin-cal-cell.booked.unconfirmed .sk-admin-cal-count-badge { color: #7a5c00; }
+
 /* --- Stavový odznak potvrzení --- */
 .sk-admin-status-badge {
   display: inline-flex; align-items: center; gap: 4px;
@@ -809,6 +827,22 @@ textarea.skp-input { height: 80px; padding-top: 11px; resize: none; }
 .sk-admin-status-badge.unconfirmed {
   background: #fdeec8; color: #7a5c00;
 }
+
+/* Slot popup (seznam lidí v dané hodině) */
+.sk-admin-slot-popup { min-width: 300px; max-width: 420px; }
+.sk-admin-slot-list { display: flex; flex-direction: column; padding: 4px 0; }
+.sk-admin-slot-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 20px; cursor: pointer;
+  background: none; border: none; border-bottom: 1px solid var(--sk-line-soft);
+  width: 100%; text-align: left; gap: 12px;
+  transition: background .1s;
+}
+.sk-admin-slot-item:last-child { border-bottom: none; }
+.sk-admin-slot-item:hover { background: var(--sk-cream-100); }
+.sk-admin-slot-item-left { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.sk-admin-slot-item-name { font-size: 14px; font-weight: 600; color: var(--sk-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sk-admin-slot-item-spots { font-size: 12px; color: var(--sk-mute); }
 
 /* --- Legenda + akční tlačítka (společný řádek) --- */
 .sk-admin-legend-bar {

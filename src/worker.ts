@@ -15,6 +15,7 @@ interface ReservationRow {
   activity: string;
   date: string;
   hours: string;
+  spots: number;
   name: string;
   email: string;
   phone: string;
@@ -30,6 +31,7 @@ interface ReservationBody {
   activity: string;
   date: string;
   hours: number[];
+  spots?: number;
   name: string;
   email: string;
   phone?: string;
@@ -42,6 +44,7 @@ interface AdminReservationBody {
   activity: string;
   date: string;
   hours: number[];
+  spots?: number;
   name: string;
   email?: string;
   phone?: string;
@@ -49,6 +52,8 @@ interface AdminReservationBody {
   payment: string;
   price: number;
 }
+
+const ACTIVITY_CAPACITY: Record<string, number> = { gym: 15 };
 
 interface BlockedSlotRow {
   id: number;
@@ -328,26 +333,40 @@ async function handlePostReservation(
   }
 
   const { results: existing } = await env.DB.prepare(
-    'SELECT hours FROM reservations WHERE activity = ? AND date = ?'
-  ).bind(activity, date).all<{ hours: string }>();
+    'SELECT hours, spots FROM reservations WHERE activity = ? AND date = ?'
+  ).bind(activity, date).all<{ hours: string; spots: number }>();
 
-  const takenHours = new Set<number>();
-  for (const r of existing) {
-    for (const h of JSON.parse(r.hours) as number[]) takenHours.add(h);
-  }
-
-  if (hours.some(h => takenHours.has(h))) {
-    return json({ error: 'Vybraný termín byl mezitím obsazen.' }, 409);
+  const capacity = ACTIVITY_CAPACITY[activity];
+  if (capacity !== undefined) {
+    const spotsPerHour = new Map<number, number>();
+    for (const r of existing) {
+      for (const h of JSON.parse(r.hours) as number[]) {
+        spotsPerHour.set(h, (spotsPerHour.get(h) ?? 0) + (r.spots ?? 1));
+      }
+    }
+    const requestedSpots = body.spots ?? 1;
+    if (hours.some(h => (spotsPerHour.get(h) ?? 0) + requestedSpots > capacity)) {
+      return json({ error: 'Vybraný termín byl mezitím obsazen.' }, 409);
+    }
+  } else {
+    const takenHours = new Set<number>();
+    for (const r of existing) {
+      for (const h of JSON.parse(r.hours) as number[]) takenHours.add(h);
+    }
+    if (hours.some(h => takenHours.has(h))) {
+      return json({ error: 'Vybraný termín byl mezitím obsazen.' }, 409);
+    }
   }
 
   const token = crypto.randomUUID();
 
   await env.DB.prepare(
-    'INSERT INTO reservations (activity, date, hours, name, email, phone, note, payment, price, created_at, cancel_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    'INSERT INTO reservations (activity, date, hours, spots, name, email, phone, note, payment, price, created_at, cancel_token) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
   ).bind(
     activity,
     date,
     JSON.stringify(hours),
+    body.spots ?? 1,
     name,
     email,
     body.phone ?? '',
@@ -475,23 +494,36 @@ async function handleAdminReservation(request: Request, env: Env): Promise<Respo
   }
 
   const { results: existing } = await env.DB.prepare(
-    'SELECT hours FROM reservations WHERE activity = ? AND date = ?'
-  ).bind(activity, date).all<{ hours: string }>();
+    'SELECT hours, spots FROM reservations WHERE activity = ? AND date = ?'
+  ).bind(activity, date).all<{ hours: string; spots: number }>();
 
-  const takenHours = new Set<number>();
-  for (const r of existing) {
-    for (const h of JSON.parse(r.hours) as number[]) takenHours.add(h);
-  }
-
-  if (hours.some(h => takenHours.has(h))) {
-    return json({ error: 'Vybraný termín je obsazen.' }, 409);
+  const capacity = ACTIVITY_CAPACITY[activity];
+  if (capacity !== undefined) {
+    const spotsPerHour = new Map<number, number>();
+    for (const r of existing) {
+      for (const h of JSON.parse(r.hours) as number[]) {
+        spotsPerHour.set(h, (spotsPerHour.get(h) ?? 0) + (r.spots ?? 1));
+      }
+    }
+    const requestedSpots = body.spots ?? 1;
+    if (hours.some(h => (spotsPerHour.get(h) ?? 0) + requestedSpots > capacity)) {
+      return json({ error: 'Vybraný termín je obsazen.' }, 409);
+    }
+  } else {
+    const takenHours = new Set<number>();
+    for (const r of existing) {
+      for (const h of JSON.parse(r.hours) as number[]) takenHours.add(h);
+    }
+    if (hours.some(h => takenHours.has(h))) {
+      return json({ error: 'Vybraný termín je obsazen.' }, 409);
+    }
   }
 
   const now = new Date().toISOString();
   const result = await env.DB.prepare(
-    'INSERT INTO reservations (activity, date, hours, name, email, phone, note, payment, price, created_at, confirmed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    'INSERT INTO reservations (activity, date, hours, spots, name, email, phone, note, payment, price, created_at, confirmed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
   ).bind(
-    activity, date, JSON.stringify(hours), name,
+    activity, date, JSON.stringify(hours), body.spots ?? 1, name,
     body.email ?? '', body.phone ?? '', body.note ?? '',
     payment, price ?? 0, now, now,
   ).run();
