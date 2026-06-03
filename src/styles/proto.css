@@ -839,7 +839,7 @@ textarea.skp-input { height: 80px; padding-top: 11px; resize: none; }
 
 /* Slot popup (seznam lidí v dané hodině) */
 .sk-admin-slot-popup { min-width: 300px; max-width: 420px; }
-.sk-admin-slot-list { display: flex; flex-direction: column; padding: 4px 0; }
+.sk-admin-slot-list { display: flex; flex-direction: column; padding: 4px 0; background: var(--sk-cream-50); }
 .sk-admin-slot-item {
   display: flex; align-items: center; justify-content: space-between;
   padding: 10px 20px; cursor: pointer;
