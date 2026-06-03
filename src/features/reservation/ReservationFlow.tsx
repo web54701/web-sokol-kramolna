@@ -117,7 +117,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
   function slotInfo(date: Date, h: number): { st: string; remaining?: number; blockNote?: string } {
     const dn = epochDay(date);
     const isToday = dn === epochDay(NOW);
-    if (dn < epochDay(NOW) || (isToday && h <= NOW.getHours())) return { st: 'past' };
+    if (dn < epochDay(NOW) || (isToday && h < NOW.getHours())) return { st: 'past' };
     const block = findBlock(date, h);
     if (block) return { st: 'blocked', blockNote: block.note_public ? block.note : undefined };
     const count = busySlots.get(`${toISODate(date)}-${h}`) ?? 0;
@@ -418,7 +418,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
                     key={d.getTime() + '-' + h}
                     className={cls}
                     onClick={() => clickSlot(d, h, info.st)}
-                    title={info.st === 'free' ? `${DOW[d.getDay()]} ${fmtDM(d)} ${h}:00 – ${h + 1}:00` : info.st === 'past' ? 'Již proběhlo' : info.st === 'blocked' ? (info.blockNote || 'Nedostupné') : (mode === 'gym' ? 'Plně obsazeno' : 'Obsazeno')}
+                    title={info.st === 'free' ? `${DOW[d.getDay()]} ${fmtDM(d)} ${h}:00 – ${h + 1}:00` : info.st === 'past' ? 'Již proběhlo' : info.st === 'blocked' ? `${DOW[d.getDay()]} ${fmtDM(d)} ${h}:00 – ${h + 1}:00\n${info.blockNote || 'Nedostupné'}` : `${DOW[d.getDay()]} ${fmtDM(d)} ${h}:00 – ${h + 1}:00\n${mode === 'gym' ? 'Plně obsazeno' : 'Obsazeno'}`}
                   >
                     {mode === 'gym' && (info.st === 'free' || info.st === 'full') && (
                       <span className="cap">{info.st === 'full' ? '0' : info.remaining}</span>
