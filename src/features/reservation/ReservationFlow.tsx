@@ -32,7 +32,8 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
   const cfg = MODES[mode];
   const NOW = new Date();
   const [step, setStep] = useState(1);
-  const [emailSent, setEmailSent] = useState(true);
+  const [emailSent, setEmailSent] = useState(false);
+  const [emailVerification, setEmailVerification] = useState(true);
   const [weekOff, setWeekOff] = useState(0);
   const calScrollRef = useRef<HTMLDivElement>(null);
   const [sel, setSel] = useState<SelState>({ dayNo: null, slots: [] });
@@ -99,6 +100,17 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
       .then(r => r.json())
       .then((data: unknown) => setBlockedSlots(data as BlockedSlot[]))
       .catch(() => setBlockedSlots([]));
+  }, [mode]);
+
+  // Načíst nastavení e-mailového ověřování
+  useEffect(() => {
+    fetch(`/api/settings?activity=${mode}`)
+      .then(r => r.json())
+      .then((data: unknown) => {
+        const d = data as { email_verification: boolean };
+        setEmailVerification(d.email_verification);
+      })
+      .catch(() => setEmailVerification(true));
   }, [mode]);
 
   const rangeLabel = `${fmtDM(week[0])} – ${fmtDMY(week[6])}`;
@@ -201,8 +213,9 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
         return;
       }
       if (!res.ok) throw new Error('server error');
-      const data = await res.json() as { ok: boolean; emailSent: boolean };
+      const data = await res.json() as { ok: boolean; emailSent: boolean; emailVerification: boolean };
       setEmailSent(data.emailSent);
+      setEmailVerification(data.emailVerification);
       setStep(4);
       window.scrollTo(0, 0);
     } catch {
@@ -227,45 +240,55 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
 
   // ---------- SUCCESS ----------
   if (step === 4) {
+    // requiresConfirmation = ověřování zapnuto A e-mail byl odeslán
+    const requiresConfirmation = emailVerification && emailSent;
+
+    let leadText: string;
+    let emailSectionTitle: string;
+    let emailSectionNote: string;
+
+    if (requiresConfirmation) {
+      leadText = 'Termín je předběžně zarezervován. Aby byla rezervace platná, je nutné ji potvrdit kliknutím na odkaz v e-mailu.';
+      emailSectionTitle = 'Zkontrolujte e-mail a potvrďte rezervaci';
+      emailSectionNote = 'Odkaz k potvrzení jsme odeslali na výše uvedenou adresu. Rezervaci lze stejným odkazem kdykoliv zdarma zrušit.';
+    } else if (emailVerification && !emailSent) {
+      leadText = 'Rezervace je platná a termín je zarezervován.';
+      emailSectionTitle = 'Rezervace je potvrzena automaticky';
+      emailSectionNote = 'E-mail s odkazem se nepodařilo odeslat, proto jsme rezervaci potvrdili automaticky. Kontaktujte nás, pokud chcete rezervaci zrušit.';
+    } else if (emailSent) {
+      leadText = 'Rezervace je platná a termín je zarezervován.';
+      emailSectionTitle = 'Potvrzení bylo odesláno na e-mail';
+      emailSectionNote = 'Shrnutí rezervace jsme odeslali na výše uvedenou adresu. Chcete-li rezervaci zrušit, kontaktujte správce.';
+    } else {
+      leadText = 'Rezervace je platná a termín je zarezervován.';
+      emailSectionTitle = 'Rezervace je potvrzena';
+      emailSectionNote = 'Chcete-li rezervaci zrušit, kontaktujte správce.';
+    }
+
     return (
       <div className="skp-success">
         <div className="skp-success-card">
           <div className="skp-success-head">
-            <div className={`skp-success-badge${emailSent ? ' pending' : ''}`}>
+            <div className={`skp-success-badge${requiresConfirmation ? ' pending' : ''}`}>
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M20 6 9 17l-5-5"/>
               </svg>
             </div>
             <div>
               <h2>Rezervace přijata</h2>
-              <p className="lead">{emailSent
-                ? 'Termín je předběžně zarezervován. Aby byla rezervace platná, je nutné ji potvrdit kliknutím na odkaz v e-mailu.'
-                : 'Rezervace je platná a termín je zarezervován.'
-              }</p>
+              <p className="lead">{leadText}</p>
             </div>
           </div>
 
-          <div className={`skp-email-confirm${emailSent ? ' pending' : ''}`}>
+          <div className={`skp-email-confirm${requiresConfirmation ? ' pending' : ''}`}>
             <div className="skp-email-confirm-icon">
               <Icon.email size={32} />
             </div>
-            {emailSent ? (
-              <div className="skp-email-confirm-body">
-                <div className="skp-email-confirm-title">Zkontrolujte e-mail a potvrďte rezervaci</div>
-                <div className="skp-email-confirm-addr">{form.email}</div>
-                <div className="skp-email-confirm-note">
-                  Odkaz k potvrzení jsme odeslali na výše uvedenou adresu. Rezervaci lze stejným odkazem kdykoliv zdarma zrušit.
-                </div>
-              </div>
-            ) : (
-              <div className="skp-email-confirm-body">
-                <div className="skp-email-confirm-title">Rezervace je potvrzena automaticky</div>
-                <div className="skp-email-confirm-addr">{form.email}</div>
-                <div className="skp-email-confirm-note">
-                  E-mail s odkazem se nepodařilo odeslat, proto jsme rezervaci potvrdili automaticky. Kontaktujte nás, pokud chcete rezervaci zrušit.
-                </div>
-              </div>
-            )}
+            <div className="skp-email-confirm-body">
+              <div className="skp-email-confirm-title">{emailSectionTitle}</div>
+              <div className="skp-email-confirm-addr">{form.email}</div>
+              <div className="skp-email-confirm-note">{emailSectionNote}</div>
+            </div>
           </div>
 
           <div className="skp-success-detail">
@@ -452,7 +475,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
     mainContent = (
       <div className="skp-form-card">
         <h3>Vaše údaje</h3>
-        <p className="lead">Na e-mail vám pošleme potvrzovací kód a detaily rezervace.</p>
+        <p className="lead">{emailVerification ? 'Na e-mail vám pošleme potvrzovací odkaz a detaily rezervace.' : 'Na e-mail vám pošleme shrnutí rezervace.'}</p>
         <div className="skp-form-grid">
           <div className="skp-field full">
             <label>Jméno a příjmení <span className="req">*</span></label>
@@ -529,7 +552,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
             <span className="v">{form.payment === 'hotove' ? 'Osobně při vrácení klíčů' : 'Převodem na účet Sokola'}</span>
           </div>
           <div className="kv"><span className="k">Celkem k úhradě</span><span className="v" style={{ fontSize: 18 }}>{total} Kč</span></div>
-          <p style={{ fontSize: 13, color: 'var(--sk-mute)', margin: '8px 0 0', lineHeight: 1.5 }}>Rezervaci lze kdykoliv zdarma zrušit kliknutím na odkaz v potvrzovacím e-mailu.</p>
+          <p style={{ fontSize: 13, color: 'var(--sk-mute)', margin: '8px 0 0', lineHeight: 1.5 }}>{emailVerification ? 'Rezervaci lze kdykoliv zdarma zrušit kliknutím na odkaz v potvrzovacím e-mailu.' : 'Rezervaci lze zrušit kontaktováním správce.'}</p>
         </div>
       </div>
     );

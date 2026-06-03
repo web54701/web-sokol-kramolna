@@ -328,14 +328,14 @@ textarea.skp-input { height: 80px; padding-top: 11px; resize: none; }
 .skp-email-confirm {
   background: var(--sk-green-600);
   color: var(--sk-cream-50);
-}
-.skp-email-confirm.pending {
-  background: #a05808;
   border-radius: 14px;
   padding: 20px 22px;
   display: flex;
   gap: 16px;
   align-items: flex-start;
+}
+.skp-email-confirm.pending {
+  background: #a05808;
 }
 .skp-email-confirm-icon {
   width: 52px; height: 52px; flex-shrink: 0;
@@ -344,6 +344,10 @@ textarea.skp-input { height: 80px; padding-top: 11px; resize: none; }
   display: grid; place-items: center;
 }
 .skp-email-confirm-title {
+  font-weight: 700; font-size: 16px; line-height: 1.3;
+  margin-bottom: 6px;
+}
+.skp-email-confirm.pending .skp-email-confirm-title {
   font-family: "Source Serif 4", serif;
   font-weight: 800; font-size: 18px; line-height: 1.2;
   margin-bottom: 8px;
@@ -875,6 +879,64 @@ textarea.skp-input { height: 80px; padding-top: 11px; resize: none; }
   display: flex; align-items: center; gap: 6px;
   margin-top: 14px;
   font-size: 12px; color: var(--sk-mute);
+}
+
+/* --- Nastavení --- */
+.sk-admin-settings {
+  border: 1px solid var(--sk-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.sk-admin-settings-row {
+  display: flex; align-items: center; gap: 16px;
+  padding: 14px 16px;
+  background: var(--sk-surface);
+}
+.sk-admin-settings-info {
+  flex: 1; min-width: 0;
+}
+.sk-admin-settings-label {
+  font-size: 14px; font-weight: 500; color: var(--sk-ink);
+}
+.sk-admin-settings-desc {
+  font-size: 12px; color: var(--sk-mute); margin-top: 2px; line-height: 1.4;
+}
+.sk-admin-toggle {
+  flex-shrink: 0;
+  position: relative;
+  width: 44px; height: 24px;
+  border-radius: 12px;
+  border: none; cursor: pointer;
+  background: #9ca3af;
+  transition: background .2s;
+  padding: 0;
+  &.on { background: var(--sk-green-600, #16a34a); }
+  &:disabled { opacity: .45; cursor: not-allowed; }
+}
+.sk-admin-toggle-knob {
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,.25);
+  transition: transform .2s;
+  .sk-admin-toggle.on & { transform: translateX(20px); }
+}
+
+/* Gear tlačítko v akční liště */
+.sk-admin-gear-btn {
+  margin-left: auto;
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--sk-border);
+  background: var(--sk-surface);
+  color: var(--sk-mute);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background .15s, color .15s;
+  &:hover { background: var(--sk-cream-100); color: var(--sk-ink); }
 }
 
 /* --- Popup kontaktu --- */

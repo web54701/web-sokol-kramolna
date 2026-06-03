@@ -138,12 +138,7 @@ async function sendAlert(env: Env, subject: string, message: string): Promise<vo
   if (!res.ok) throw new Error(`Resend API ${res.status}: ${await res.text()}`);
 }
 
-async function sendConfirmationEmail(
-  env: Env,
-  body: ReservationBody,
-  token: string,
-  origin: string,
-): Promise<void> {
+async function getGmailAccessToken(env: Env): Promise<string> {
   const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -156,8 +151,23 @@ async function sendConfirmationEmail(
   });
   if (!tokenRes.ok) throw new Error(`Token exchange failed: ${await tokenRes.text()}`);
   const { access_token } = await tokenRes.json<{ access_token: string }>();
+  return access_token;
+}
 
-  const sortedHours = [...body.hours].sort((a, b) => a - b);
+async function sendGmailRaw(access_token: string, mime: string): Promise<void> {
+  const sendRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${access_token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ raw: toBase64url(mime) }),
+  });
+  if (!sendRes.ok) throw new Error(`Gmail API failed: ${await sendRes.text()}`);
+}
+
+function buildHoursFormatted(hours: number[]): string {
+  const sortedHours = [...hours].sort((a, b) => a - b);
   const ranges: string[] = [];
   let i = 0;
   while (i < sortedHours.length) {
@@ -166,8 +176,17 @@ async function sendConfirmationEmail(
     ranges.push(`${sortedHours[i]}:00–${sortedHours[j] + 1}:00`);
     i = j + 1;
   }
-  const hoursFormatted = ranges.join(', ');
+  return ranges.join(', ');
+}
 
+async function sendConfirmationEmail(
+  env: Env,
+  body: ReservationBody,
+  token: string,
+  origin: string,
+): Promise<void> {
+  const access_token = await getGmailAccessToken(env);
+  const hoursFormatted = buildHoursFormatted(body.hours);
   const confirmUrl = `${origin}/api/reservations/confirm?token=${token}`;
   const cancelUrl = `${origin}/api/reservations/cancel?token=${token}`;
 
@@ -205,15 +224,77 @@ async function sendConfirmationEmail(
     wrapLines(textToBase64(emailBody)),
   ].join('\r\n');
 
-  const sendRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${access_token}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ raw: toBase64url(mime) }),
-  });
-  if (!sendRes.ok) throw new Error(`Gmail API failed: ${await sendRes.text()}`);
+  await sendGmailRaw(access_token, mime);
+}
+
+async function sendConfirmedEmail(
+  env: Env,
+  body: ReservationBody,
+  token: string,
+  origin: string,
+): Promise<void> {
+  const access_token = await getGmailAccessToken(env);
+  const hoursFormatted = buildHoursFormatted(body.hours);
+  const cancelUrl = `${origin}/api/reservations/cancel?token=${token}`;
+
+  const emailBody = [
+    `Dobrý den, ${body.name},`,
+    ``,
+    `Vaše rezervace byla potvrzena. Níže najdete souhrn.`,
+    ``,
+    `Aktivita: ${ACTIVITY_LABELS[body.activity] ?? body.activity}`,
+    `Datum:    ${formatDate(body.date)}`,
+    `Hodiny:   ${hoursFormatted}`,
+    `Cena:     ${body.price} Kč`,
+    `Platba:   ${PAYMENT_LABELS[body.payment] ?? body.payment}`,
+    ``,
+    `─────────────────────────────────────────`,
+    `ZRUŠIT REZERVACI:`,
+    cancelUrl,
+    `─────────────────────────────────────────`,
+    ``,
+    `S pozdravem,`,
+    `TJ Sokol Kramolna`,
+  ].join('\n');
+
+  const mime = [
+    `From: web54701@gmail.com`,
+    `To: ${body.email}`,
+    `Subject: ${encodeSubject('Rezervace potvrzena – TJ Sokol Kramolna')}`,
+    `MIME-Version: 1.0`,
+    `Content-Type: text/plain; charset=UTF-8`,
+    `Content-Transfer-Encoding: base64`,
+    ``,
+    wrapLines(textToBase64(emailBody)),
+  ].join('\r\n');
+
+  await sendGmailRaw(access_token, mime);
+}
+
+async function handleGetSettings(request: Request, env: Env): Promise<Response> {
+  const activity = new URL(request.url).searchParams.get('activity');
+  if (!activity) return json({ error: 'Missing activity' }, 400);
+
+  const row = await env.DB.prepare(
+    'SELECT email_verification FROM settings WHERE activity = ?'
+  ).bind(activity).first<{ email_verification: number }>();
+
+  if (!row) return json({ email_verification: true });
+  return json({ email_verification: row.email_verification === 1 });
+}
+
+async function handlePatchSettings(request: Request, env: Env): Promise<Response> {
+  const activity = new URL(request.url).searchParams.get('activity');
+  if (!activity) return json({ error: 'Missing activity' }, 400);
+
+  const body = await request.json() as { email_verification?: boolean };
+  if (body.email_verification === undefined) return json({ error: 'Missing email_verification' }, 400);
+
+  await env.DB.prepare(
+    'INSERT INTO settings (activity, email_verification) VALUES (?, ?) ON CONFLICT(activity) DO UPDATE SET email_verification = excluded.email_verification'
+  ).bind(activity, body.email_verification ? 1 : 0).run();
+
+  return json({ ok: true });
 }
 
 async function handleGetReservations(request: Request, env: Env): Promise<Response> {
@@ -277,34 +358,54 @@ async function handlePostReservation(
     token,
   ).run();
 
+  const settingsRow = await env.DB.prepare(
+    'SELECT email_verification FROM settings WHERE activity = ?'
+  ).bind(activity).first<{ email_verification: number }>();
+  const emailVerification = settingsRow ? settingsRow.email_verification === 1 : true;
+
   const origin = new URL(request.url).origin;
   let emailSent = false;
   let emailError: unknown = null;
 
-  try {
-    await sendConfirmationEmail(env, body, token, origin);
-    emailSent = true;
-  } catch (err) {
-    emailError = err;
-    console.error('Email send failed:', err);
-  }
+  if (emailVerification) {
+    try {
+      await sendConfirmationEmail(env, body, token, origin);
+      emailSent = true;
+    } catch (err) {
+      emailError = err;
+      console.error('Email send failed:', err);
+    }
 
-  if (!emailSent) {
+    if (!emailSent) {
+      ctx.waitUntil(
+        Promise.all([
+          env.DB.prepare('UPDATE reservations SET confirmed_at = ? WHERE cancel_token = ?')
+            .bind(new Date().toISOString(), token).run()
+            .catch(dbErr => console.error('Auto-confirm failed:', dbErr)),
+          sendAlert(
+            env,
+            'Sokol Kramolna: selhalo odesílání e-mailu',
+            `Nepodařilo se odeslat potvrzovací e-mail zákazníkovi ${body.name} (${body.email}).\n\nReservace byla automaticky potvrzena.\n\nChyba: ${emailError}\n\nPravděpodobná příčina: expirovaný Gmail refresh token. Postup obnovy viz GMAIL.md.`,
+          ).catch(alertErr => console.error('Alert send failed:', alertErr)),
+        ])
+      );
+    }
+  } else {
     ctx.waitUntil(
-      Promise.all([
-        env.DB.prepare('UPDATE reservations SET confirmed_at = ? WHERE cancel_token = ?')
-          .bind(new Date().toISOString(), token).run()
-          .catch(dbErr => console.error('Auto-confirm failed:', dbErr)),
-        sendAlert(
-          env,
-          'Sokol Kramolna: selhalo odesílání e-mailu',
-          `Nepodařilo se odeslat potvrzovací e-mail zákazníkovi ${body.name} (${body.email}).\n\nReservace byla automaticky potvrzena.\n\nChyba: ${emailError}\n\nPravděpodobná příčina: expirovaný Gmail refresh token. Postup obnovy viz GMAIL.md.`,
-        ).catch(alertErr => console.error('Alert send failed:', alertErr)),
-      ])
+      env.DB.prepare('UPDATE reservations SET confirmed_at = ? WHERE cancel_token = ?')
+        .bind(new Date().toISOString(), token).run()
+        .catch(dbErr => console.error('Auto-confirm failed:', dbErr))
     );
+
+    try {
+      await sendConfirmedEmail(env, body, token, origin);
+      emailSent = true;
+    } catch (err) {
+      console.error('Confirmed email send failed:', err);
+    }
   }
 
-  return json({ ok: true, emailSent }, 201);
+  return json({ ok: true, emailSent, emailVerification }, 201);
 }
 
 async function handlePatchReservation(request: Request, env: Env): Promise<Response> {
@@ -573,6 +674,12 @@ export default {
     if (pathname === '/api/reservations') {
       if (method === 'GET') return handleGetReservations(request, env);
       if (method === 'POST') return handlePostReservation(request, env, ctx);
+      return new Response('Method Not Allowed', { status: 405 });
+    }
+
+    if (pathname === '/api/settings') {
+      if (method === 'GET') return handleGetSettings(request, env);
+      if (method === 'PATCH') return handlePatchSettings(request, env);
       return new Response('Method Not Allowed', { status: 405 });
     }
 

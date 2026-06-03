@@ -117,6 +117,11 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
   const [blockedSlots, setBlockedSlots] = useState<BlockedSlot[]>([]);
   const [blockModal, setBlockModal] = useState(false);   // create mode
   const [editBlock, setEditBlock] = useState<BlockedSlot | null>(null);  // edit mode
+
+  // --- Nastavení ---
+  const [emailVerification, setEmailVerification] = useState(true);
+  const [settingsSaving, setSettingsSaving] = useState(false);
+  const [settingsModal, setSettingsModal] = useState(false);
   const [blockForm, setBlockForm] = useState<BlockForm>({
     type: 'recurring', dow: 1, date: toISODate(NOW), allDay: true, startHour: 8, endHour: 20,
     note: '', notePublic: false,
@@ -151,6 +156,32 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
       .then((data: unknown) => setBlockedSlots(data as BlockedSlot[]))
       .catch(() => setBlockedSlots([]));
   }, [mode]);
+
+  // Načíst nastavení
+  useEffect(() => {
+    fetch(`/api/settings?activity=${mode}`)
+      .then(r => r.json())
+      .then((data: unknown) => {
+        const d = data as { email_verification: boolean };
+        setEmailVerification(d.email_verification);
+      })
+      .catch(() => setEmailVerification(true));
+  }, [mode]);
+
+  async function toggleEmailVerification() {
+    const newValue = !emailVerification;
+    setSettingsSaving(true);
+    try {
+      await fetch(`/api/settings?activity=${mode}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email_verification: newValue }),
+      });
+      setEmailVerification(newValue);
+    } finally {
+      setSettingsSaving(false);
+    }
+  }
 
   // Reset editací při změně popupu
   useEffect(() => {
@@ -531,6 +562,9 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
             </button>
             <button className="sk-admin-add-btn secondary" onClick={openAddBlockModal}>
               <Icon.ban size={15} /> Přidat blokování
+            </button>
+            <button className="sk-admin-gear-btn" onClick={() => setSettingsModal(true)} title="Nastavení">
+              <Icon.gear size={16} />
             </button>
           </div>
         </div>
@@ -1054,6 +1088,41 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
           </div>
         );
       })()}
+
+      {/* ---- Modal nastavení ---- */}
+      {settingsModal && (
+        <div className="sk-admin-popup-overlay" onClick={() => setSettingsModal(false)}>
+          <div className="sk-admin-popup" onClick={e => e.stopPropagation()}>
+            <div className="sk-admin-popup-header">
+              <button className="sk-admin-popup-close" onClick={() => setSettingsModal(false)} aria-label="Zavřít">
+                <Icon.close size={18} />
+              </button>
+              <div className="sk-admin-popup-name">{MODES[mode].court}</div>
+              <div className="sk-admin-popup-when">Nastavení</div>
+            </div>
+            <div className="sk-admin-popup-body">
+              <div className="sk-admin-settings-row">
+                <div className="sk-admin-settings-info">
+                  <div className="sk-admin-settings-label">Ověřování e-mailem</div>
+                  <div className="sk-admin-settings-desc">
+                    {emailVerification
+                      ? 'Zákazník musí potvrdit rezervaci odkazem v e-mailu.'
+                      : 'Rezervace se potvrdí automaticky ihned po odeslání.'}
+                  </div>
+                </div>
+                <button
+                  className={`sk-admin-toggle${emailVerification ? ' on' : ''}`}
+                  onClick={() => void toggleEmailVerification()}
+                  disabled={settingsSaving}
+                  aria-label={emailVerification ? 'Vypnout ověřování e-mailem' : 'Zapnout ověřování e-mailem'}
+                >
+                  <span className="sk-admin-toggle-knob" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
