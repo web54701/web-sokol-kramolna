@@ -616,25 +616,28 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
                     past ? 'past' : '',
                     isSel ? 'admin-sel' : '',
                   ].filter(Boolean).join(' ');
-                  const handleClick = isBooked
-                    ? hasMultiple
-                      ? () => setSlotPopup({ date: d, hour: h, list: resList })
-                      : () => setPopup(res)
-                    : blockObj
-                      ? () => openEditBlock(blockObj)
-                      : past
-                        ? undefined
-                        : () => clickCell(d, h);
+                  const handleClick = blockObj
+                    ? () => openEditBlock(blockObj)
+                    : past
+                      ? undefined
+                      : () => clickCell(d, h);
                   return (
                     <div key={key} className={cls} onClick={handleClick}>
-                      {isBooked && !hasMultiple && (
-                        <span className="sk-admin-cal-name">{res.name}</span>
-                      )}
-                      {isBooked && hasMultiple && (
-                        <div className="sk-admin-cal-multi">
+                      {isBooked && (
+                        <>
                           <span className="sk-admin-cal-name">{res.name}</span>
-                          <span className="sk-admin-cal-count-badge">+{resList.length - 1}</span>
-                        </div>
+                          <button
+                            className="sk-admin-cal-res-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              hasMultiple ? setSlotPopup({ date: d, hour: h, list: resList }) : setPopup(res);
+                            }}
+                            title={hasMultiple ? `${resList.length} rezervace` : res.name}
+                            aria-label="Zobrazit rezervace"
+                          >
+                            {resList.length}
+                          </button>
+                        </>
                       )}
                       {isBlocked && blockObj && (
                         <div className="sk-admin-cal-blocked-content">

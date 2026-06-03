@@ -447,7 +447,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
                     title={info.st === 'free' ? `${DOW[d.getDay()]} ${fmtDM(d)} ${h}:00 – ${h + 1}:00` : info.st === 'past' ? 'Již proběhlo' : info.st === 'blocked' ? `${DOW[d.getDay()]} ${fmtDM(d)} ${h}:00 – ${h + 1}:00\n${info.blockNote || 'Nedostupné'}` : `${DOW[d.getDay()]} ${fmtDM(d)} ${h}:00 – ${h + 1}:00\n${mode === 'gym' ? 'Plně obsazeno' : 'Obsazeno'}`}
                   >
                     {mode === 'gym' && (info.st === 'free' || info.st === 'full') && (
-                      <span className="cap">{info.st === 'full' ? '0' : info.remaining}</span>
+                      <span className="cap">{info.remaining}</span>
                     )}
                   </div>
                 );
