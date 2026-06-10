@@ -614,6 +614,74 @@
   font-size: 13px;
 }
 
+/* --- Náhled webu --- */
+
+.cms-preview-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: var(--sk-green-900);
+  display: flex;
+  flex-direction: column;
+}
+
+.cms-preview-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  flex-shrink: 0;
+}
+
+.cms-preview-bar .cms-btn-secondary {
+  border-color: rgba(255, 255, 255, 0.4);
+  color: var(--sk-cream-50);
+}
+
+.cms-preview-bar .cms-btn-secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.cms-preview-bar .cms-btn-secondary.active {
+  background: var(--sk-cream-50);
+  color: var(--sk-green-900);
+  border-color: var(--sk-cream-50);
+}
+
+.cms-preview-toggle {
+  display: flex;
+  gap: 8px;
+}
+
+.cms-preview-stage {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  padding: 0 16px 16px;
+}
+
+.cms-preview-frame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.cms-preview-stage.is-mobile {
+  align-items: center;
+}
+
+.cms-preview-stage.is-mobile .cms-preview-frame {
+  width: 375px;
+  height: min(720px, 100%);
+  border-radius: 18px;
+  box-shadow: 0 0 0 8px rgba(0, 0, 0, 0.45);
+}
+
 /* --- Mobil --- */
 
 @media (max-width: 760px) {

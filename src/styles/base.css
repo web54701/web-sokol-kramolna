@@ -424,6 +424,14 @@
 .sk-mob-btn { display: none; }
 .sk-mob-overlay { display: none; }
 
+/* ---------- Per-objekt viditelnost z CMS ---------- */
+@media (max-width: 640px) {
+  .sk-only-desktop { display: none !important; }
+}
+@media (min-width: 641px) {
+  .sk-only-mobile { display: none !important; }
+}
+
 /* ========== MOBILNÍ LAYOUT (max 640 px) ========== */
 @media (max-width: 640px) {
 

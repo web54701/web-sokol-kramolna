@@ -3,6 +3,7 @@ import { apiSend, type AdminUser } from './api';
 import { PageEditor } from './PageEditor';
 import { UsersScreen } from './UsersScreen';
 import { MediaLibrary } from './MediaLibrary';
+import { PreviewPane } from './PreviewPane';
 
 export type CmsPage = 'home' | 'onas' | 'tenis' | 'gym' | 'kontakt';
 
@@ -34,6 +35,7 @@ function sectionKey(s: CmsSection): string {
 
 export function AdminLayout({ user, onLogout }: { user: AdminUser; onLogout: () => void }) {
   const [section, setSection] = useState<CmsSection>({ kind: 'page', page: 'home' });
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const logout = async () => {
     try { await apiSend('POST', '/api/auth/logout'); } catch { /* cookie se smaže i tak */ }
@@ -58,6 +60,7 @@ export function AdminLayout({ user, onLogout }: { user: AdminUser; onLogout: () 
           <span>Správa webu · Sokol Kramolna</span>
         </div>
         <div className="cms-topbar-user">
+          <button className="cms-logout-btn" onClick={() => setPreviewOpen(true)}>Náhled</button>
           <a href="/" target="_blank" rel="noreferrer" className="cms-topbar-link">Zobrazit web ↗</a>
           <span className="cms-topbar-email">{user.name || user.email}</span>
           <button className="cms-logout-btn" onClick={logout}>Odhlásit</button>
@@ -87,6 +90,7 @@ export function AdminLayout({ user, onLogout }: { user: AdminUser; onLogout: () 
           {section.kind === 'media' && <MediaLibrary />}
         </main>
       </div>
+      {previewOpen && <PreviewPane onClose={() => setPreviewOpen(false)} />}
     </div>
   );
 }
