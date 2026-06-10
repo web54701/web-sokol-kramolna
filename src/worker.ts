@@ -1,6 +1,13 @@
 /// <reference types="@cloudflare/workers-types" />
 
 import { handleLogin, handleLogout, handleMe } from './server/auth.ts';
+import {
+  handleGetContent,
+  handleCreateContent,
+  handlePatchContent,
+  handleDeleteContent,
+  handleReorderContent,
+} from './server/content.ts';
 
 export interface Env {
   ASSETS: Fetcher;
@@ -717,6 +724,27 @@ export default {
 
     if (pathname === '/api/auth/me') {
       if (method === 'GET') return handleMe(request, env);
+      return new Response('Method Not Allowed', { status: 405 });
+    }
+
+    if (pathname === '/api/content') {
+      if (method === 'GET') return handleGetContent(env);
+      return new Response('Method Not Allowed', { status: 405 });
+    }
+
+    if (pathname === '/api/admin/content') {
+      if (method === 'POST') return handleCreateContent(request, env);
+      return new Response('Method Not Allowed', { status: 405 });
+    }
+
+    if (pathname === '/api/admin/content/reorder') {
+      if (method === 'PUT') return handleReorderContent(request, env);
+      return new Response('Method Not Allowed', { status: 405 });
+    }
+
+    if (pathname.startsWith('/api/admin/content/')) {
+      if (method === 'PATCH') return handlePatchContent(request, env);
+      if (method === 'DELETE') return handleDeleteContent(request, env);
       return new Response('Method Not Allowed', { status: 405 });
     }
 

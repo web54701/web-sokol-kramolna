@@ -1,0 +1,95 @@
+-- VYGENEROVÁNO scripts/generate-seed.mjs — needitovat ručně, upravit src/content/default-content.mjs.
+-- CMS: obsahové objekty webu + revize
+
+CREATE TABLE IF NOT EXISTS content_objects (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  zone TEXT NOT NULL,
+  type TEXT NOT NULL,
+  sort INTEGER NOT NULL DEFAULT 0,
+  hidden INTEGER NOT NULL DEFAULT 0,
+  visibility TEXT NOT NULL DEFAULT 'all' CHECK (visibility IN ('all','desktop','mobile')),
+  data TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_content_zone ON content_objects(zone, sort);
+
+CREATE TABLE IF NOT EXISTS content_revisions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  object_id INTEGER NOT NULL,
+  data TEXT NOT NULL,
+  saved_by TEXT NOT NULL DEFAULT '',
+  saved_at TEXT NOT NULL
+);
+
+-- Seed: naplní jen úplně prázdnou tabulku (idempotentní).
+INSERT INTO content_objects (zone, type, sort, hidden, visibility, data, updated_at)
+SELECT column1, column2, column3, 0, 'all', column4, datetime('now')
+FROM (VALUES
+  ('global.logo', 'logo', 0, '{"img":"/logo_sokol.png","line1":"SOKOL","line2":"KRAMOLNA"}'),
+  ('global.nav', 'nav_item', 0, '{"label":"O nás","route":"onas"}'),
+  ('global.nav', 'nav_item', 1, '{"label":"Tenis","route":"tenis"}'),
+  ('global.nav', 'nav_item', 2, '{"label":"Posilovna","route":"gym"}'),
+  ('global.nav', 'nav_item', 3, '{"label":"Kontakt","route":"kontakt"}'),
+  ('global.contact', 'contact_global', 0, '{"orgName":"T.J. Sokol Kramolna","phone":"776 026 304","email":"kramolna@sokol.eu","addressLines":["Kramolna 85","547 01 Kramolna","Královéhradecký kraj"],"hoursTitle":"Provozní doba areálu","hours":[{"days":"Pondělí – Pátek","time":"8:00 – 21:00","weekend":false},{"days":"Sobota – Neděle","time":"9:00 – 20:00","weekend":true}],"hoursNote":"Posilovna je pro členy s čipem přístupná i mimo přítomnost správce."}'),
+  ('global.footer', 'footer_link', 0, '{"label":"Ochrana osobních údajů","href":""}'),
+  ('global.footer', 'footer_link', 1, '{"label":"Provozní řád areálu","href":""}'),
+  ('global.footer_meta', 'text', 0, '{"text":"Sokol Kramolna © {year}"}'),
+  ('home.hero', 'hero', 0, '{"img":"/hero.webp","imgAlt":"Antukový tenisový kurt","title":"Sokol Kramolna","subtitle":"Sportovní areál v srdci Kramolny.\nTenisový kurt a posilovna pro všechny."}'),
+  ('home.cards', 'action_card', 0, '{"img":"/raketa.webp","title":"Tenis","sub":"Rezervace kurtu\na ceník","cta":"ZOBRAZIT","route":"tenis","tone":"green"}'),
+  ('home.cards', 'action_card', 1, '{"img":"/cinka.webp","title":"Posilovna","sub":"Rezervace vstupu\na ceník","cta":"ZOBRAZIT","route":"gym","tone":"rust"}'),
+  ('home.info', 'info_col', 0, '{"icon":"pin","title":"Kde nás najdete","kind":"text","body":"Kramolna 85\n547 01 Kramolna\nokres Náchod"}'),
+  ('home.info', 'info_col', 1, '{"icon":"phone","title":"Kontakt","kind":"contact","body":""}'),
+  ('home.info', 'info_col', 2, '{"icon":"clock","title":"Provozní doba","kind":"hours","body":"Podrobnosti na stránkách aktivit."}'),
+  ('home.info', 'info_col', 3, '{"icon":"shield","title":"Sokol","kind":"text","body":"Jsme součástí tradiční české tělovýchovné organizace."}'),
+  ('onas.head', 'pagehead', 0, '{"title":"O nás","intro":"Tělocvičná jednota Sokol Kramolna — sport a spolkový život v podhůří u Náchoda."}'),
+  ('onas.lead', 'text', 0, '{"text":"Jsme dobrovolný spolek, který v Kramolně nabízí prostor pro sport, setkávání a péči o společný areál — a navazuje na více než stoletou tradici českého Sokola."}'),
+  ('onas.body', 'paragraph', 0, '{"text":"Tělocvičná jednota **Sokol Kramolna** působí v obci pod úpatím Krkonoš, nedaleko Náchoda. Kramolnu dnes tvoří tři části — **Kramolna, Lhotky a Trubějov** — a žije v ní kolem 1 100 obyvatel. První písemná zmínka o vsi pochází z roku 1415."}'),
+  ('onas.body', 'paragraph', 1, '{"text":"Provozujeme **antukový tenisový kurt** a **posilovnu** v budově sokolovny, pořádáme turnaje a společenské akce a staráme se o areál jako o živé místo setkávání. Okolí láká i k pohybu v přírodě — vsí prochází turistické i cyklistické trasy a nedaleko stojí rozhledna Dobrošov."}'),
+  ('onas.body', 'paragraph', 2, '{"text":"Jsme součástí **České obce sokolské**, jedné z nejstarších tělovýchovných organizací v Evropě, a spadáme pod **župu Podkrkonošskou – Jiráskovu**. Hlásíme se k jejím hodnotám: zdravý pohyb, otevřenost všem a péče o obec."}'),
+  ('onas.values', 'value_card', 0, '{"icon":"shield","title":"Zdravý pohyb","desc":"Sport přístupný všem věkovým skupinám, od dětí po seniory."}'),
+  ('onas.values', 'value_card', 1, '{"icon":"pin","title":"Péče o obec","desc":"Udržujeme areál jako místo setkávání v srdci Kramolny."}'),
+  ('onas.values', 'value_card', 2, '{"icon":"clock","title":"Tradice i dnešek","desc":"Hlásíme se k hodnotám Sokola „Tužme se\" a otevíráme je dnešní době."}'),
+  ('onas.timeline_head', 'text', 0, '{"text":"Z naší historie"}'),
+  ('onas.timeline', 'timeline_item', 0, '{"year":"1862","title":"Vznik Sokola","desc":"Tělocvičnou jednotu Sokol Pražský zakládají Miroslav Tyrš a Jindřich Fügner. Začíná tradice českého spolkového cvičení."}'),
+  ('onas.timeline', 'timeline_item', 1, '{"year":"20. l.","title":"Sokol v Kramolně","desc":"V obci se rozvíjí čilý spolkový život a vzniká i místní tělocvičná jednota Sokol Kramolna."}'),
+  ('onas.timeline', 'timeline_item', 2, '{"year":"1941","title":"Zákaz za okupace","desc":"Činnost Sokola je nacisty zastavena (Akce Sokol). Datum 8. října se dnes připomíná jako Památný den sokolstva."}'),
+  ('onas.timeline', 'timeline_item', 3, '{"year":"1990","title":"Obnova činnosti","desc":"Po listopadu 1989 se Česká obec sokolská i místní jednoty vracejí k práci a majetku."}'),
+  ('onas.timeline', 'timeline_item', 4, '{"year":"Dnes","title":"Sport pro obec","desc":"Provozujeme antukový kurt a posilovnu, pořádáme akce a pečujeme o areál pro občany Kramolny i okolí."}'),
+  ('tenis.head', 'pagehead', 0, '{"title":"Tenis","intro":"Jeden antukový kurt v klidném prostředí areálu, v provozu od dubna do října. Rezervace online v hodinových blocích — jednoduše, bez registrace."}'),
+  ('tenis.meta', 'activity_meta', 0, '{"resvTab":"Rezervace kurtu","heroEyebrow":"Antukový kurt · Sokol Kramolna","heroTitle":"Zahrajte si na našem kurtu","heroText":"Udržovaná antuka částečně stíněná vzrostlými lípami — příjemný chládek i v letních vedrech. Jeden kurt na celý areál, rezervace online na pár kliknutí.","ctaLabel":"Rezervovat kurt","hoursNote":"Kurt je v provozu od dubna do října. Mimo sezónu se nehraje.","priceNoteTitle":"Jak zaplatit","priceNote":"Cena je za celý kurt bez ohledu na počet hráčů — ať přijdou dva nebo čtyři, platí se stejně. Zaplatit lze osobně při vrácení klíčů nebo převodem na účet Sokola Kramolna."}'),
+  ('tenis.stats', 'stat', 0, '{"v":"1","k":"Antukový kurt"}'),
+  ('tenis.stats', 'stat', 1, '{"v":"duben–říjen","k":"Sezóna"}'),
+  ('tenis.stats', 'stat', 2, '{"v":"100","k":"Kč / hodina"}'),
+  ('tenis.rules', 'rule', 0, '{"text":"Rezervovat lze až 21 dní dopředu — nejzazší lhůtu nehlídáme, klidně i těsně před hrou."}'),
+  ('tenis.rules', 'rule', 1, '{"text":"Hodinové bloky lze spojit do delší hry."}'),
+  ('tenis.rules', 'rule', 2, '{"text":"Storno zdarma kdykoliv."}'),
+  ('tenis.rules', 'rule', 3, '{"text":"Klíče vyzvedněte u p. Mikšíčka (Kramolna 279) nejdříve 15 minut před začátkem; po hře je vraťte na stejné místo a uhraďte pronájem osobně."}'),
+  ('tenis.rules', 'rule', 4, '{"text":"Po hře prosíme o úklid kurtu — lajnovačka, vlečka na antuky a hadice jsou připraveny u kurtu."}'),
+  ('tenis.rules', 'rule', 5, '{"text":"Hraje se za přirozeného denního světla — kurt osvětlení nemá."}'),
+  ('tenis.hours', 'hours_row', 0, '{"days":"Pondělí – Pátek","time":"8:00 – 21:00"}'),
+  ('tenis.hours', 'hours_row', 1, '{"days":"Sobota – Neděle","time":"9:00 – 20:00"}'),
+  ('tenis.price', 'price_row', 0, '{"lbl":"Nečlenové","sub":"Hodinový pronájem kurtu","val":"100 Kč"}'),
+  ('tenis.price', 'price_row', 1, '{"lbl":"Členové Sokola","sub":"Měsíční paušál, neomezené hraní","val":"100 Kč / měsíc"}'),
+  ('gym.head', 'pagehead', 0, '{"title":"Posilovna","intro":"Plně vybavená posilovna v budově sokolovny. Rezervujte si hodinový vstup online — vidíte volnou kapacitu i dopředu."}'),
+  ('gym.meta', 'activity_meta', 0, '{"resvTab":"Rezervace vstupu","heroEyebrow":"Posilovna · Sokol Kramolna","heroTitle":"Cvičte, kdy se vám to hodí","heroText":"Činky, multifunkční klec, kardio zóna i kladkový stroj na ploše 80 m². Rezervací vstupu máte jistotu místa — kapacita je 15 osob v jednom bloku.","ctaLabel":"Rezervovat vstup","hoursNote":"Rezervovat online lze v provozních hodinách správce (8:00–20:00).","priceNoteTitle":"Dobré vědět","priceNote":"Permanentky a členství vyřídíte u správce nebo online při rezervaci. Úvodní 30minutové seznámení s instruktorem je pro nové návštěvníky zdarma."}'),
+  ('gym.stats', 'stat', 0, '{"v":"80 m²","k":"Plocha posilovny"}'),
+  ('gym.stats', 'stat', 1, '{"v":"15","k":"Míst v bloku"}'),
+  ('gym.stats', 'stat', 2, '{"v":"od 100","k":"Kč / vstup"}'),
+  ('gym.rules', 'rule', 0, '{"text":"Vstup se rezervuje v hodinových blocích, kapacita 15 osob."}'),
+  ('gym.rules', 'rule', 1, '{"text":"Členové s čipem mají přístup i mimo přítomnost správce."}'),
+  ('gym.rules', 'rule', 2, '{"text":"První návštěvu doporučujeme s instruktorem — seznámení zdarma."}'),
+  ('gym.rules', 'rule', 3, '{"text":"Storno zdarma nejpozději 24 hodin před začátkem."}'),
+  ('gym.hours', 'hours_row', 0, '{"days":"Pondělí – Pátek","time":"6:00 – 22:00"}'),
+  ('gym.hours', 'hours_row', 1, '{"days":"Sobota – Neděle","time":"8:00 – 20:00"}'),
+  ('gym.price', 'price_row', 0, '{"lbl":"Jednorázový vstup","sub":"Hodinový blok","val":"100 Kč"}'),
+  ('gym.price', 'price_row', 1, '{"lbl":"Permanentka 10 vstupů","sub":"Platnost 6 měsíců","val":"800 Kč"}'),
+  ('gym.price', 'price_row', 2, '{"lbl":"Měsíční permanentka","sub":"Neomezený vstup","val":"700 Kč"}'),
+  ('gym.price', 'price_row', 3, '{"lbl":"Roční členství","sub":"Jen členové Sokola","val":"3 900 Kč"}'),
+  ('kontakt.head', 'pagehead', 0, '{"title":"Kontakt","intro":"Najdete nás v Kramolně u Náchoda. Ozvěte se nám — rádi pomůžeme s rezervací i členstvím."}'),
+  ('kontakt.cards', 'contact_card', 0, '{"icon":"pin","label":"Adresa","bigSource":"address","big":"","note":""}'),
+  ('kontakt.cards', 'contact_card', 1, '{"icon":"phone","label":"Telefon","bigSource":"phone","big":"","note":"Správce areálu — nejlépe v provozních hodinách."}'),
+  ('kontakt.cards', 'contact_card', 2, '{"icon":"email","label":"E-mail","bigSource":"email","big":"","note":"Spadáme pod Sokolskou župu Podkrkonošskou – Jiráskovu."}'),
+  ('kontakt.map', 'map', 0, '{"url":"https://mapy.com/s/hevufegega","title":"Mapa — Sokol Kramolna"}')
+)
+WHERE NOT EXISTS (SELECT 1 FROM content_objects);
