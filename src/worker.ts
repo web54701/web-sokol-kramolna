@@ -1,5 +1,7 @@
 /// <reference types="@cloudflare/workers-types" />
 
+import { handleLogin, handleLogout, handleMe } from './server/auth.ts';
+
 export interface Env {
   ASSETS: Fetcher;
   DB: D1Database;
@@ -702,6 +704,21 @@ export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     const { pathname, method } = { pathname: url.pathname, method: request.method };
+
+    if (pathname === '/api/auth/login') {
+      if (method === 'POST') return handleLogin(request, env);
+      return new Response('Method Not Allowed', { status: 405 });
+    }
+
+    if (pathname === '/api/auth/logout') {
+      if (method === 'POST') return handleLogout(request, env);
+      return new Response('Method Not Allowed', { status: 405 });
+    }
+
+    if (pathname === '/api/auth/me') {
+      if (method === 'GET') return handleMe(request, env);
+      return new Response('Method Not Allowed', { status: 405 });
+    }
 
     if (pathname === '/api/reservations') {
       if (method === 'GET') return handleGetReservations(request, env);
