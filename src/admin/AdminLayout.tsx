@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { apiSend, type AdminUser } from './api';
+import { PageEditor } from './PageEditor';
+import { UsersScreen } from './UsersScreen';
 
 export type CmsPage = 'home' | 'onas' | 'tenis' | 'gym' | 'kontakt';
 
@@ -77,10 +79,16 @@ export function AdminLayout({ user, onLogout }: { user: AdminUser; onLogout: () 
           </div>
         </nav>
         <main className="cms-content">
-          <div className="cms-placeholder">
-            <h2>Editor obsahu</h2>
-            <p>Tato sekce bude doplněna v další fázi implementace CMS.</p>
-          </div>
+          {(section.kind === 'page' || section.kind === 'global') && (
+            <PageEditor sectionKey={sectionKey(section)} />
+          )}
+          {section.kind === 'users' && <UsersScreen currentUser={user} />}
+          {section.kind === 'media' && (
+            <div className="cms-placeholder">
+              <h2>Knihovna médií</h2>
+              <p>Bude doplněna v další fázi (úložiště R2).</p>
+            </div>
+          )}
         </main>
       </div>
     </div>

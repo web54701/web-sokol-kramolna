@@ -8,6 +8,12 @@ import {
   handleDeleteContent,
   handleReorderContent,
 } from './server/content.ts';
+import {
+  handleGetUsers,
+  handleCreateUser,
+  handlePatchUser,
+  handleDeleteUser,
+} from './server/users.ts';
 
 export interface Env {
   ASSETS: Fetcher;
@@ -724,6 +730,18 @@ export default {
 
     if (pathname === '/api/auth/me') {
       if (method === 'GET') return handleMe(request, env);
+      return new Response('Method Not Allowed', { status: 405 });
+    }
+
+    if (pathname === '/api/admin/users') {
+      if (method === 'GET') return handleGetUsers(request, env);
+      if (method === 'POST') return handleCreateUser(request, env);
+      return new Response('Method Not Allowed', { status: 405 });
+    }
+
+    if (pathname.startsWith('/api/admin/users/')) {
+      if (method === 'PATCH') return handlePatchUser(request, env);
+      if (method === 'DELETE') return handleDeleteUser(request, env);
       return new Response('Method Not Allowed', { status: 405 });
     }
 
