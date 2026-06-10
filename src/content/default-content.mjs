@@ -22,8 +22,8 @@ export const DEFAULT_CONTENT = [
       addressLines: ['Kramolna 85', '547 01 Kramolna', 'Královéhradecký kraj'],
       hoursTitle: 'Provozní doba areálu',
       hours: [
-        { days: 'Pondělí – Pátek', time: '8:00 – 21:00', weekend: false },
-        { days: 'Sobota – Neděle', time: '9:00 – 20:00', weekend: true },
+        { days: 'Pondělí – Pátek', daysShort: 'Po – Pá', time: '8:00 – 21:00', weekend: false },
+        { days: 'Sobota – Neděle', daysShort: 'So – Ne', time: '9:00 – 20:00', weekend: true },
       ],
       hoursNote: 'Posilovna je pro členy s čipem přístupná i mimo přítomnost správce.',
     },

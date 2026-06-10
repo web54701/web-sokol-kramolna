@@ -25,7 +25,7 @@ export type ContentSeed = {
 export type LogoData = { img: string; line1: string; line2: string };
 export type NavItemData = { label: string; route: string };
 
-export type ContactHoursRow = { days: string; time: string; weekend: boolean };
+export type ContactHoursRow = { days: string; daysShort: string; time: string; weekend: boolean };
 export type ContactGlobalData = {
   orgName: string;
   phone: string;

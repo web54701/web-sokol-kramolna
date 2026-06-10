@@ -1,5 +1,6 @@
 import { Suspense, lazy } from 'react';
 import App from './App.tsx';
+import { ContentProvider } from './content/ContentProvider.tsx';
 
 const AdminApp = lazy(() => import('./admin/AdminApp.tsx'));
 const isAdminRoute = window.location.pathname.startsWith('/admin');
@@ -12,5 +13,9 @@ export function Root() {
       </Suspense>
     );
   }
-  return <App />;
+  return (
+    <ContentProvider>
+      <App />
+    </ContentProvider>
+  );
 }

@@ -31,7 +31,7 @@ FROM (VALUES
   ('global.nav', 'nav_item', 1, '{"label":"Tenis","route":"tenis"}'),
   ('global.nav', 'nav_item', 2, '{"label":"Posilovna","route":"gym"}'),
   ('global.nav', 'nav_item', 3, '{"label":"Kontakt","route":"kontakt"}'),
-  ('global.contact', 'contact_global', 0, '{"orgName":"T.J. Sokol Kramolna","phone":"776 026 304","email":"kramolna@sokol.eu","addressLines":["Kramolna 85","547 01 Kramolna","Královéhradecký kraj"],"hoursTitle":"Provozní doba areálu","hours":[{"days":"Pondělí – Pátek","time":"8:00 – 21:00","weekend":false},{"days":"Sobota – Neděle","time":"9:00 – 20:00","weekend":true}],"hoursNote":"Posilovna je pro členy s čipem přístupná i mimo přítomnost správce."}'),
+  ('global.contact', 'contact_global', 0, '{"orgName":"T.J. Sokol Kramolna","phone":"776 026 304","email":"kramolna@sokol.eu","addressLines":["Kramolna 85","547 01 Kramolna","Královéhradecký kraj"],"hoursTitle":"Provozní doba areálu","hours":[{"days":"Pondělí – Pátek","daysShort":"Po – Pá","time":"8:00 – 21:00","weekend":false},{"days":"Sobota – Neděle","daysShort":"So – Ne","time":"9:00 – 20:00","weekend":true}],"hoursNote":"Posilovna je pro členy s čipem přístupná i mimo přítomnost správce."}'),
   ('global.footer', 'footer_link', 0, '{"label":"Ochrana osobních údajů","href":""}'),
   ('global.footer', 'footer_link', 1, '{"label":"Provozní řád areálu","href":""}'),
   ('global.footer_meta', 'text', 0, '{"text":"Sokol Kramolna © {year}"}'),
