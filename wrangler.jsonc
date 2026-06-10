@@ -8,8 +8,14 @@
   },
   "assets": {
     "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*"]
+    "run_worker_first": ["/api/*", "/media/*"]
   },
+  "r2_buckets": [
+    {
+      "binding": "MEDIA",
+      "bucket_name": "sokol-kramolna-media"
+    }
+  ],
   "compatibility_flags": [
     "nodejs_compat"
   ],

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { IconByName } from '../components/IconByName';
+import { MediaPickerModal } from './MediaPickerModal';
 import { TYPES, ICON_OPTIONS, type FieldDef } from './schema';
 import type { ContactHoursRow } from '../content/types';
 
@@ -85,8 +86,7 @@ function Field({ field, value, onChange }: {
       )}
 
       {field.widget === 'image' && (
-        <input id={id} className="skp-input" type="text" placeholder="/hero.webp"
-          value={String(value ?? '')} onChange={(e) => onChange(e.target.value)} />
+        <ImageField id={id} value={String(value ?? '')} onChange={onChange} />
       )}
 
       {field.widget === 'icon' && (
@@ -112,6 +112,25 @@ function Field({ field, value, onChange }: {
       )}
 
       {field.help && <p className="cms-field-help">{field.help}</p>}
+    </div>
+  );
+}
+
+function ImageField({ id, value, onChange }: { id: string; value: string; onChange: (v: string) => void }) {
+  const [picking, setPicking] = useState(false);
+
+  return (
+    <div className="cms-image-field">
+      {value && <img className="cms-image-thumb" src={value} alt="" />}
+      <input id={id} className="skp-input" type="text" placeholder="/media/…"
+        value={value} onChange={(e) => onChange(e.target.value)} />
+      <button type="button" className="cms-btn-secondary" onClick={() => setPicking(true)}>Vybrat…</button>
+      {picking && (
+        <MediaPickerModal
+          onPick={(url) => { onChange(url); setPicking(false); }}
+          onClose={() => setPicking(false)}
+        />
+      )}
     </div>
   );
 }

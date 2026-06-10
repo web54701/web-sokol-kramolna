@@ -504,6 +504,92 @@
   font-size: 13px;
 }
 
+/* --- Média --- */
+
+.cms-media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 12px;
+}
+
+.cms-media-item {
+  position: relative;
+  margin: 0;
+  border: 1px solid var(--sk-line);
+  border-radius: 10px;
+  background: var(--sk-cream-100);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.cms-media-item img {
+  width: 100%;
+  height: 96px;
+  object-fit: cover;
+  display: block;
+  background: var(--sk-cream-200);
+}
+
+.cms-media-item figcaption {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 6px 8px;
+}
+
+.cms-media-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sk-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cms-media-meta {
+  font-size: 11px;
+  color: var(--sk-mute);
+}
+
+.cms-media-actions {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  gap: 4px;
+}
+
+.cms-media-pick {
+  cursor: pointer;
+  padding: 0;
+}
+
+.cms-media-pick:hover {
+  border-color: var(--sk-green-600);
+  box-shadow: 0 0 0 2px rgba(44, 88, 71, 0.25);
+}
+
+.cms-image-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cms-image-field .skp-input {
+  flex: 1;
+}
+
+.cms-image-thumb {
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--sk-line);
+  background: var(--sk-cream-200);
+  flex-shrink: 0;
+}
+
 /* --- Uživatelé --- */
 
 .cms-user-form {

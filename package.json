@@ -16,7 +16,9 @@
     "db:migrate:0006": "wrangler d1 execute sokol-kramolna-db --file=migrations/0006_users.sql",
     "seed:generate": "node scripts/generate-seed.mjs",
     "db:migrate:0007:local": "npm run seed:generate && wrangler d1 execute sokol-kramolna-db --local --file=migrations/0007_content.sql",
-    "db:migrate:0007": "npm run seed:generate && wrangler d1 execute sokol-kramolna-db --file=migrations/0007_content.sql"
+    "db:migrate:0007": "npm run seed:generate && wrangler d1 execute sokol-kramolna-db --file=migrations/0007_content.sql",
+    "db:migrate:0008:local": "wrangler d1 execute sokol-kramolna-db --local --file=migrations/0008_media.sql",
+    "db:migrate:0008": "wrangler d1 execute sokol-kramolna-db --file=migrations/0008_media.sql"
   },
   "dependencies": {
     "react": "^19.2.6",

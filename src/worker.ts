@@ -14,10 +14,17 @@ import {
   handlePatchUser,
   handleDeleteUser,
 } from './server/users.ts';
+import {
+  handleServeMedia,
+  handleUploadMedia,
+  handleListMedia,
+  handleDeleteMedia,
+} from './server/media.ts';
 
 export interface Env {
   ASSETS: Fetcher;
   DB: D1Database;
+  MEDIA: R2Bucket;
   GMAIL_CLIENT_ID: string;
   GMAIL_CLIENT_SECRET: string;
   GMAIL_REFRESH_TOKEN: string;
@@ -730,6 +737,22 @@ export default {
 
     if (pathname === '/api/auth/me') {
       if (method === 'GET') return handleMe(request, env);
+      return new Response('Method Not Allowed', { status: 405 });
+    }
+
+    if (pathname.startsWith('/media/')) {
+      if (method === 'GET') return handleServeMedia(request, env);
+      return new Response('Method Not Allowed', { status: 405 });
+    }
+
+    if (pathname === '/api/admin/media') {
+      if (method === 'GET') return handleListMedia(request, env);
+      if (method === 'POST') return handleUploadMedia(request, env);
+      return new Response('Method Not Allowed', { status: 405 });
+    }
+
+    if (pathname.startsWith('/api/admin/media/')) {
+      if (method === 'DELETE') return handleDeleteMedia(request, env);
       return new Response('Method Not Allowed', { status: 405 });
     }
 

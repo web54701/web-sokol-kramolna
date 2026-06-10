@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { apiSend, type AdminUser } from './api';
 import { PageEditor } from './PageEditor';
 import { UsersScreen } from './UsersScreen';
+import { MediaLibrary } from './MediaLibrary';
 
 export type CmsPage = 'home' | 'onas' | 'tenis' | 'gym' | 'kontakt';
 
@@ -83,12 +84,7 @@ export function AdminLayout({ user, onLogout }: { user: AdminUser; onLogout: () 
             <PageEditor sectionKey={sectionKey(section)} />
           )}
           {section.kind === 'users' && <UsersScreen currentUser={user} />}
-          {section.kind === 'media' && (
-            <div className="cms-placeholder">
-              <h2>Knihovna médií</h2>
-              <p>Bude doplněna v další fázi (úložiště R2).</p>
-            </div>
-          )}
+          {section.kind === 'media' && <MediaLibrary />}
         </main>
       </div>
     </div>
