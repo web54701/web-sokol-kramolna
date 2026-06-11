@@ -2,6 +2,9 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Icon } from '../../components/Icon';
 import { MODES, type ReservationModeKey } from './reservation.config';
 import { DOW, DAY_MS, epochDay, fmtDM, fmtDMY, toISODate, HOURS, weekStart } from './date-utils';
+import { useZone, useSingleton } from '../../content/hooks';
+import { renderInline } from '../../content/inline';
+import type { UiTextData, DocData } from '../../content/types';
 
 interface ApiReservation {
   date: string;
@@ -31,6 +34,11 @@ const MIN_COL_W = 80;
 
 export function ReservationFlow({ mode, onGoOverview }: Props) {
   const cfg = MODES[mode];
+  const uiTexts = useZone<UiTextData>('resv.texts');
+  const rad = useSingleton<DocData>('legal.rad');
+  // Text průvodce dle klíče; fallback na výchozí znění, kdyby objekt v DB chyběl.
+  const t = (key: string, fallback: string): string =>
+    uiTexts.find((o) => o.data.key === key)?.data.text ?? fallback;
   const NOW = new Date();
   const [step, setStep] = useState(1);
   const [emailSent, setEmailSent] = useState(false);
@@ -251,21 +259,21 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
     let emailSectionNote: string;
 
     if (requiresConfirmation) {
-      leadText = 'Termín je předběžně zarezervován. Aby byla rezervace platná, je nutné ji potvrdit kliknutím na odkaz v e-mailu.';
-      emailSectionTitle = 'Zkontrolujte e-mail a potvrďte rezervaci';
-      emailSectionNote = 'Odkaz k potvrzení jsme odeslali na výše uvedenou adresu. Rezervaci lze stejným odkazem kdykoliv zdarma zrušit.';
+      leadText = t('success_lead_confirm', 'Termín je předběžně zarezervován. Aby byla rezervace platná, je nutné ji potvrdit kliknutím na odkaz v e-mailu.');
+      emailSectionTitle = t('success_title_confirm', 'Zkontrolujte e-mail a potvrďte rezervaci');
+      emailSectionNote = t('success_note_confirm', 'Odkaz k potvrzení jsme odeslali na výše uvedenou adresu. Rezervaci lze stejným odkazem kdykoliv zdarma zrušit.');
     } else if (emailVerification && !emailSent) {
-      leadText = 'Rezervace je platná a termín je zarezervován.';
-      emailSectionTitle = 'Rezervace je potvrzena automaticky';
-      emailSectionNote = 'E-mail s odkazem se nepodařilo odeslat, proto jsme rezervaci potvrdili automaticky. Kontaktujte nás, pokud chcete rezervaci zrušit.';
+      leadText = t('success_lead_done', 'Rezervace je platná a termín je zarezervován.');
+      emailSectionTitle = t('success_title_auto', 'Rezervace je potvrzena automaticky');
+      emailSectionNote = t('success_note_auto', 'E-mail s odkazem se nepodařilo odeslat, proto jsme rezervaci potvrdili automaticky. Kontaktujte nás, pokud chcete rezervaci zrušit.');
     } else if (emailSent) {
-      leadText = 'Rezervace je platná a termín je zarezervován.';
-      emailSectionTitle = 'Potvrzení bylo odesláno na e-mail';
-      emailSectionNote = 'Shrnutí rezervace jsme odeslali na výše uvedenou adresu. Chcete-li rezervaci zrušit, kontaktujte správce.';
+      leadText = t('success_lead_done', 'Rezervace je platná a termín je zarezervován.');
+      emailSectionTitle = t('success_title_sent', 'Potvrzení bylo odesláno na e-mail');
+      emailSectionNote = t('success_note_sent', 'Shrnutí rezervace jsme odeslali na výše uvedenou adresu. Chcete-li rezervaci zrušit, kontaktujte správce.');
     } else {
-      leadText = 'Rezervace je platná a termín je zarezervován.';
-      emailSectionTitle = 'Rezervace je potvrzena';
-      emailSectionNote = 'Chcete-li rezervaci zrušit, kontaktujte správce.';
+      leadText = t('success_lead_done', 'Rezervace je platná a termín je zarezervován.');
+      emailSectionTitle = t('success_title_plain', 'Rezervace je potvrzena');
+      emailSectionNote = t('success_note_plain', 'Chcete-li rezervaci zrušit, kontaktujte správce.');
     }
 
     return (
@@ -299,7 +307,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
             <div className="row"><span className="k">Čas</span><span className="v">{timeLabel} · {hoursCount} h</span></div>
             {mode === 'gym' && <div className="row"><span className="k">Míst</span><span className="v">{spots}</span></div>}
             <div className="row"><span className="k">Jméno</span><span className="v">{form.name}</span></div>
-            <div className="row"><span className="k">Platba</span><span className="v">{form.payment === 'hotove' ? 'Osobně při vrácení klíčů' : 'Převodem na účet Sokola'}</span></div>
+            <div className="row"><span className="k">Platba</span><span className="v">{form.payment === 'hotove' ? t('payment_full_hotove', 'Osobně při vrácení klíčů') : t('payment_full_prevod', 'Převodem na účet Sokola')}</span></div>
             <div className="row"><span className="k">Celkem</span><span className="v" style={{ fontSize: 16 }}>{total} Kč</span></div>
           </div>
 
@@ -320,7 +328,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
 
       {hoursCount === 0 ? (
         <div className="skp-sum-empty">
-          Zatím nemáte vybraný termín.<br />Klikněte na volné hodiny v kalendáři.
+          {renderInline(t('sum_empty', 'Zatím nemáte vybraný termín.\nKlikněte na volné hodiny v kalendáři.'))}
         </div>
       ) : (
         <>
@@ -469,7 +477,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
         </div>
         <div className="skp-cal-tip">
           <Icon.clock size={15} />
-          <span>Klikněte na volné hodiny. Sousední hodiny můžete <b>spojit do delšího bloku</b>.</span>
+          <span>{renderInline(t('cal_tip', 'Klikněte na volné hodiny. Sousední hodiny můžete **spojit do delšího bloku**.'))}</span>
         </div>
       </div>
     );
@@ -478,7 +486,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
     mainContent = (
       <div className="skp-form-card">
         <h3>Vaše údaje</h3>
-        <p className="lead">{emailVerification ? 'Na e-mail vám pošleme potvrzovací odkaz a detaily rezervace.' : 'Na e-mail vám pošleme shrnutí rezervace.'}</p>
+        <p className="lead">{emailVerification ? t('step2_lead_verify', 'Na e-mail vám pošleme potvrzovací odkaz a detaily rezervace.') : t('step2_lead_noverify', 'Na e-mail vám pošleme shrnutí rezervace.')}</p>
         <div className="skp-form-grid">
           <div className="skp-field full">
             <label>Jméno a příjmení <span className="req">*</span></label>
@@ -501,7 +509,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
           <div className="skp-field full">
             <label>Poznámka <span style={{ color: 'var(--sk-mute)', fontWeight: 400 }}>(nepovinné)</span></label>
             <textarea className="skp-input" value={form.note}
-              placeholder={mode === 'tenis' ? 'Např. půjčení vybavení, počet hráčů…' : 'Např. první návštěva, potřebuji instruktora…'}
+              placeholder={mode === 'tenis' ? t('note_placeholder_tenis', 'Např. půjčení vybavení, počet hráčů…') : t('note_placeholder_gym', 'Např. první návštěva, potřebuji instruktora…')}
               onChange={(e) => setForm({ ...form, note: e.target.value })} />
           </div>
           <div className="skp-field full">
@@ -509,17 +517,17 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
             <div className="skp-payment">
               <label>
                 <input type="radio" name="payment" value="hotove" checked={form.payment === 'hotove'} onChange={() => setForm({ ...form, payment: 'hotove' })} />
-                <span><strong>Osobně</strong>Při vrácení klíčů u správce</span>
+                <span><strong>{t('payment_hotove_title', 'Osobně')}</strong>{t('payment_hotove_desc', 'Při vrácení klíčů u správce')}</span>
               </label>
               <label>
                 <input type="radio" name="payment" value="prevod" checked={form.payment === 'prevod'} onChange={() => setForm({ ...form, payment: 'prevod' })} />
-                <span><strong>Převodem</strong>Na účet Sokola Kramolna</span>
+                <span><strong>{t('payment_prevod_title', 'Převodem')}</strong>{t('payment_prevod_desc', 'Na účet Sokola Kramolna')}</span>
               </label>
             </div>
           </div>
           <div className="full">
             <p className="skp-rules-notice">
-              Vstupem na kurt souhlasíte s <a onClick={(e) => { e.preventDefault(); setShowRules(true); }}>provozním řádem</a>.
+              {t('rules_notice', 'Vstupem na kurt souhlasíte s')} <a onClick={(e) => { e.preventDefault(); setShowRules(true); }}>{t('rules_notice_link', 'provozním řádem')}</a>.
             </p>
           </div>
         </div>
@@ -552,16 +560,16 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
           <div className="lbl">Platba</div>
           <div className="kv">
             <span className="k">Způsob platby</span>
-            <span className="v">{form.payment === 'hotove' ? 'Osobně při vrácení klíčů' : 'Převodem na účet Sokola'}</span>
+            <span className="v">{form.payment === 'hotove' ? t('payment_full_hotove', 'Osobně při vrácení klíčů') : t('payment_full_prevod', 'Převodem na účet Sokola')}</span>
           </div>
           <div className="kv"><span className="k">Celkem k úhradě</span><span className="v" style={{ fontSize: 18 }}>{total} Kč</span></div>
-          <p style={{ fontSize: 13, color: 'var(--sk-mute)', margin: '8px 0 0', lineHeight: 1.5 }}>{emailVerification ? 'Rezervaci lze kdykoliv zdarma zrušit kliknutím na odkaz v potvrzovacím e-mailu.' : 'Rezervaci lze zrušit kontaktováním správce.'}</p>
+          <p style={{ fontSize: 13, color: 'var(--sk-mute)', margin: '8px 0 0', lineHeight: 1.5 }}>{emailVerification ? t('review_cancel_verify', 'Rezervaci lze kdykoliv zdarma zrušit kliknutím na odkaz v potvrzovacím e-mailu.') : t('review_cancel_noverify', 'Rezervaci lze zrušit kontaktováním správce.')}</p>
         </div>
       </div>
     );
   }
 
-  const rulesModal = showRules && (
+  const rulesModal = showRules && rad && (
     <div className="skp-modal-overlay" onClick={() => setShowRules(false)}>
       <div className="skp-modal" onClick={(e) => e.stopPropagation()}>
         <button className="skp-modal-close" onClick={() => setShowRules(false)} aria-label="Zavřít">
@@ -569,27 +577,17 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
             <path d="M18 6 6 18M6 6l12 12"/>
           </svg>
         </button>
-        <h3>Provozní řád tenisového kurtu</h3>
-        <p>Vítejte na našem kurtu! Abychom udrželi antuku v perfektním stavu pro vás i pro ty, co přijdou po vás, dodržujte prosím tato základní pravidla:</p>
-        <h4>1. Klíče a bezpečnost</h4>
-        <ul>
-          <li><strong>Vstup a odchod:</strong> Klíče od kurtu si vyzvedávejte a vracejte podle domluvených pravidel.</li>
-          <li><strong>Zamykání:</strong> Poslední hráč dne (nebo pokud po vás nikdo nenastupuje) je povinen kurt i zázemí vždy uzamknout.</li>
-          <li><strong>Skládek:</strong> Klíč od kurtu pasuje také do skládku s vybavením. Najdete v něm lajnovačku, vápno, košťata a síť. Po použití nářadí vše ukliďte zpět a skládek zamkněte.</li>
-        </ul>
-        <h4>2. Údržba kurtu a lajnování</h4>
-        <ul>
-          <li><strong>Kropení:</strong> Pokud je kurt suchý nebo práší, před hrou ho důkladně pokropte. Antuka se tím chrání před poničením.</li>
-          <li><strong>Srovnání povrchu:</strong> Případné díry po skluzu ihned zarovnejte (zašlápněte) ještě během hry.</li>
-          <li><strong>Lajnování:</strong> Kurt nemá pevné lajny. Před hrou (nebo podle potřeby) si kurt nalajnujte vápnem pomocí lajnovačky ze skládku.</li>
-          <li><strong>Úklid po hře:</strong> Každý hráč je povinen po skončení hry kurt stáhnout síťovanou metlou (od krajů ke středu), aby byl připravený pro další hráče.</li>
-        </ul>
-        <h4>3. Obecné zásady</h4>
-        <ul>
-          <li>Na kurt je povolen vstup pouze v tenisové obuvi určené na antuku (hladký vzorek, ne hrubá podrážka/traktory).</li>
-          <li>Chovejte se k vybavení ohleduplně a udržujte na kurtu i v jeho okolí pořádek.</li>
-        </ul>
-        <p className="skp-modal-footer">Díky, že pomáháte udržovat kurt v super stavu! Hře zdar!</p>
+        <h3>{rad.title}</h3>
+        <p>{rad.intro}</p>
+        {rad.sections.map((sec, si) => (
+          <React.Fragment key={si}>
+            <h4>{sec.title}</h4>
+            <ul>
+              {sec.items.map((item, ii) => <li key={ii}>{renderInline(item)}</li>)}
+            </ul>
+          </React.Fragment>
+        ))}
+        <p className="skp-modal-footer">{rad.footer}</p>
         <div style={{ marginTop: 24 }}>
           <button className="skp-btn-primary" style={{ maxWidth: 260 }} onClick={() => setShowRules(false)}>
             Zavřít

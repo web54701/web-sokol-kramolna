@@ -23,6 +23,13 @@ function defaultObjects(): ContentObject[] {
   });
 }
 
+/** Zóny, které v DB úplně chybí (např. nově přidané v kódu), doplní z defaultů. */
+function mergeMissingZones(data: ContentObject[]): ContentObject[] {
+  const present = new Set(data.map((o) => o.zone));
+  const missing = defaultObjects().filter((o) => !present.has(o.zone));
+  return missing.length > 0 ? [...data, ...missing] : data;
+}
+
 export function ContentProvider({ children }: { children: ReactNode }) {
   const [objects, setObjects] = useState<ContentObject[] | null>(null);
 
@@ -33,7 +40,7 @@ export function ContentProvider({ children }: { children: ReactNode }) {
         const res = await fetch('/api/content', { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json() as ContentObject[];
-        if (!cancelled) setObjects(data.length > 0 ? data : defaultObjects());
+        if (!cancelled) setObjects(data.length > 0 ? mergeMissingZones(data) : defaultObjects());
       } catch {
         if (!cancelled) setObjects(defaultObjects());
       }

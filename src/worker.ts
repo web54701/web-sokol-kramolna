@@ -193,6 +193,52 @@ async function sendGmailRaw(access_token: string, mime: string): Promise<void> {
   if (!sendRes.ok) throw new Error(`Gmail API failed: ${await sendRes.text()}`);
 }
 
+type EmailTemplate = { subject: string; body: string };
+
+// Fallback, kdyby šablony v DB chyběly (zóna email.templates) — drží se v synci se seedem.
+const DEFAULT_EMAIL_TEMPLATES: Record<string, EmailTemplate> = {
+  confirmation: {
+    subject: 'Potvrzení rezervace – TJ Sokol Kramolna',
+    body: 'Dobrý den, {name},\n\nVaše rezervace byla přijata. Níže najdete shrnutí a odkazy pro potvrzení nebo zrušení.\n\nAktivita: {activity}\nDatum:    {date}\nHodiny:   {hours}\nCena:     {price} Kč\nPlatba:   {payment}\n\n─────────────────────────────────────────\nPOTVRDIT REZERVACI:\n{confirmUrl}\n\nZRUŠIT REZERVACI:\n{cancelUrl}\n─────────────────────────────────────────\n\nS pozdravem,\nTJ Sokol Kramolna',
+  },
+  confirmed: {
+    subject: 'Rezervace potvrzena – TJ Sokol Kramolna',
+    body: 'Dobrý den, {name},\n\nVaše rezervace byla potvrzena. Níže najdete souhrn.\n\nAktivita: {activity}\nDatum:    {date}\nHodiny:   {hours}\nCena:     {price} Kč\nPlatba:   {payment}\n\n─────────────────────────────────────────\nZRUŠIT REZERVACI:\n{cancelUrl}\n─────────────────────────────────────────\n\nS pozdravem,\nTJ Sokol Kramolna',
+  },
+};
+
+async function getEmailTemplate(env: Env, key: string): Promise<EmailTemplate> {
+  try {
+    const { results } = await env.DB.prepare(
+      "SELECT data FROM content_objects WHERE zone = 'email.templates'"
+    ).all<{ data: string }>();
+    for (const r of results) {
+      const d = JSON.parse(r.data) as { key?: string; subject?: string; body?: string };
+      if (d.key === key && d.subject && d.body) return { subject: d.subject, body: d.body };
+    }
+  } catch {
+    // tabulka content_objects nemusí existovat — použije se fallback
+  }
+  return DEFAULT_EMAIL_TEMPLATES[key];
+}
+
+function fillTemplate(template: string, vars: Record<string, string>): string {
+  return template.replace(/\{(\w+)\}/g, (match, key: string) => vars[key] ?? match);
+}
+
+function buildEmailVars(body: ReservationBody, token: string, origin: string): Record<string, string> {
+  return {
+    name: body.name,
+    activity: ACTIVITY_LABELS[body.activity] ?? body.activity,
+    date: formatDate(body.date),
+    hours: buildHoursFormatted(body.hours),
+    price: String(body.price),
+    payment: PAYMENT_LABELS[body.payment] ?? body.payment,
+    confirmUrl: `${origin}/api/reservations/confirm?token=${token}`,
+    cancelUrl: `${origin}/api/reservations/cancel?token=${token}`,
+  };
+}
+
 function buildHoursFormatted(hours: number[]): string {
   const sortedHours = [...hours].sort((a, b) => a - b);
   const ranges: string[] = [];
@@ -213,37 +259,14 @@ async function sendConfirmationEmail(
   origin: string,
 ): Promise<void> {
   const access_token = await getGmailAccessToken(env);
-  const hoursFormatted = buildHoursFormatted(body.hours);
-  const confirmUrl = `${origin}/api/reservations/confirm?token=${token}`;
-  const cancelUrl = `${origin}/api/reservations/cancel?token=${token}`;
-
-  const emailBody = [
-    `Dobrý den, ${body.name},`,
-    ``,
-    `Vaše rezervace byla přijata. Níže najdete shrnutí a odkazy pro potvrzení nebo zrušení.`,
-    ``,
-    `Aktivita: ${ACTIVITY_LABELS[body.activity] ?? body.activity}`,
-    `Datum:    ${formatDate(body.date)}`,
-    `Hodiny:   ${hoursFormatted}`,
-    `Cena:     ${body.price} Kč`,
-    `Platba:   ${PAYMENT_LABELS[body.payment] ?? body.payment}`,
-    ``,
-    `─────────────────────────────────────────`,
-    `POTVRDIT REZERVACI:`,
-    confirmUrl,
-    ``,
-    `ZRUŠIT REZERVACI:`,
-    cancelUrl,
-    `─────────────────────────────────────────`,
-    ``,
-    `S pozdravem,`,
-    `TJ Sokol Kramolna`,
-  ].join('\n');
+  const template = await getEmailTemplate(env, 'confirmation');
+  const vars = buildEmailVars(body, token, origin);
+  const emailBody = fillTemplate(template.body, vars);
 
   const mime = [
     `From: web54701@gmail.com`,
     `To: ${body.email}`,
-    `Subject: ${encodeSubject('Potvrzení rezervace – TJ Sokol Kramolna')}`,
+    `Subject: ${encodeSubject(fillTemplate(template.subject, vars))}`,
     `MIME-Version: 1.0`,
     `Content-Type: text/plain; charset=UTF-8`,
     `Content-Transfer-Encoding: base64`,
@@ -261,33 +284,14 @@ async function sendConfirmedEmail(
   origin: string,
 ): Promise<void> {
   const access_token = await getGmailAccessToken(env);
-  const hoursFormatted = buildHoursFormatted(body.hours);
-  const cancelUrl = `${origin}/api/reservations/cancel?token=${token}`;
-
-  const emailBody = [
-    `Dobrý den, ${body.name},`,
-    ``,
-    `Vaše rezervace byla potvrzena. Níže najdete souhrn.`,
-    ``,
-    `Aktivita: ${ACTIVITY_LABELS[body.activity] ?? body.activity}`,
-    `Datum:    ${formatDate(body.date)}`,
-    `Hodiny:   ${hoursFormatted}`,
-    `Cena:     ${body.price} Kč`,
-    `Platba:   ${PAYMENT_LABELS[body.payment] ?? body.payment}`,
-    ``,
-    `─────────────────────────────────────────`,
-    `ZRUŠIT REZERVACI:`,
-    cancelUrl,
-    `─────────────────────────────────────────`,
-    ``,
-    `S pozdravem,`,
-    `TJ Sokol Kramolna`,
-  ].join('\n');
+  const template = await getEmailTemplate(env, 'confirmed');
+  const vars = buildEmailVars(body, token, origin);
+  const emailBody = fillTemplate(template.body, vars);
 
   const mime = [
     `From: web54701@gmail.com`,
     `To: ${body.email}`,
-    `Subject: ${encodeSubject('Rezervace potvrzena – TJ Sokol Kramolna')}`,
+    `Subject: ${encodeSubject(fillTemplate(template.subject, vars))}`,
     `MIME-Version: 1.0`,
     `Content-Type: text/plain; charset=UTF-8`,
     `Content-Transfer-Encoding: base64`,

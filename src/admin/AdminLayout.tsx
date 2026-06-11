@@ -7,9 +7,11 @@ import { PreviewPane } from './PreviewPane';
 
 export type CmsPage = 'home' | 'onas' | 'tenis' | 'gym' | 'kontakt';
 
+export type CmsGlobalGroup = 'identity' | 'contact' | 'footer' | 'emails' | 'reservation';
+
 export type CmsSection =
   | { kind: 'page'; page: CmsPage }
-  | { kind: 'global'; group: 'identity' | 'contact' | 'footer' }
+  | { kind: 'global'; group: CmsGlobalGroup }
   | { kind: 'media' }
   | { kind: 'users' };
 
@@ -21,10 +23,12 @@ const PAGE_ITEMS: { page: CmsPage; label: string }[] = [
   { page: 'kontakt', label: 'Kontakt' },
 ];
 
-const GLOBAL_ITEMS: { group: 'identity' | 'contact' | 'footer'; label: string }[] = [
+const GLOBAL_ITEMS: { group: CmsGlobalGroup; label: string }[] = [
   { group: 'identity', label: 'Logo a menu' },
   { group: 'contact', label: 'Kontaktní údaje' },
   { group: 'footer', label: 'Patička' },
+  { group: 'emails', label: 'E-maily' },
+  { group: 'reservation', label: 'Rezervace — texty' },
 ];
 
 function sectionKey(s: CmsSection): string {

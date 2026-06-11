@@ -33,7 +33,10 @@
       "Bash(npx tsc *)",
       "Bash(git ls-tree *)",
       "Bash(git branch *)",
-      "Bash(npx wrangler *)"
+      "Bash(npx wrangler *)",
+      "PowerShell(npx wrangler dev)",
+      "Bash(curl -s http://localhost:8787/api/content)",
+      "Bash(node -e ' *)"
     ]
   }
 }

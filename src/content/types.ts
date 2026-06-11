@@ -75,6 +75,13 @@ export type RuleData = { text: string };
 export type HoursRowData = { days: string; time: string };
 export type PriceRowData = { lbl: string; sub: string; val: string };
 
+export type UiTextData = { key: string; text: string };
+
+export type EmailTemplateData = { key: string; subject: string; body: string };
+
+export type DocSection = { title: string; items: string[] };
+export type DocData = { title: string; intro: string; sections: DocSection[]; footer: string };
+
 export type ContactCardData = {
   icon: string;
   label: string;

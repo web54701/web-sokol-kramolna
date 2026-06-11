@@ -7,8 +7,7 @@ export function PreviewPane({ onClose }: { onClose: () => void }) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const reload = () => {
-    const frame = iframeRef.current;
-    if (frame) frame.src = frame.src;
+    iframeRef.current?.contentWindow?.location.reload();
   };
 
   return (

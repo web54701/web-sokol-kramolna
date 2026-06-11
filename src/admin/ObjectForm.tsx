@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { IconByName } from '../components/IconByName';
 import { MediaPickerModal } from './MediaPickerModal';
 import { TYPES, ICON_OPTIONS, type FieldDef } from './schema';
-import type { ContactHoursRow } from '../content/types';
+import type { ContactHoursRow, DocSection } from '../content/types';
 
 type Props = {
   title: string;
@@ -111,6 +111,10 @@ function Field({ field, value, onChange }: {
         <HoursEditor rows={Array.isArray(value) ? value as ContactHoursRow[] : []} onChange={onChange} />
       )}
 
+      {field.widget === 'doc_sections' && (
+        <DocSectionsEditor sections={Array.isArray(value) ? value as DocSection[] : []} onChange={onChange} />
+      )}
+
       {field.help && <p className="cms-field-help">{field.help}</p>}
     </div>
   );
@@ -131,6 +135,33 @@ function ImageField({ id, value, onChange }: { id: string; value: string; onChan
           onClose={() => setPicking(false)}
         />
       )}
+    </div>
+  );
+}
+
+function DocSectionsEditor({ sections, onChange }: { sections: DocSection[]; onChange: (sections: DocSection[]) => void }) {
+  const setSection = (i: number, patch: Partial<DocSection>) =>
+    onChange(sections.map((s, si) => (si === i ? { ...s, ...patch } : s)));
+
+  return (
+    <div className="cms-doc-editor">
+      {sections.map((sec, i) => (
+        <div key={i} className="cms-doc-section">
+          <div className="cms-doc-section-head">
+            <input className="skp-input" placeholder="Nadpis sekce"
+              value={sec.title} onChange={(e) => setSection(i, { title: e.target.value })} />
+            <button type="button" className="cms-row-btn"
+              onClick={() => onChange(sections.filter((_, si) => si !== i))} title="Smazat sekci">🗑</button>
+          </div>
+          <textarea className="skp-input cms-textarea" placeholder="Jeden bod na řádek; **text** = tučně"
+            value={sec.items.join('\n')}
+            onChange={(e) => setSection(i, { items: e.target.value.split('\n') })} />
+        </div>
+      ))}
+      <button type="button" className="cms-btn-secondary"
+        onClick={() => onChange([...sections, { title: '', items: [] }])}>
+        + Přidat sekci
+      </button>
     </div>
   );
 }

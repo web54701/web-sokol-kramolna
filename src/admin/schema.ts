@@ -6,9 +6,10 @@ export type FieldWidget =
   | 'multiline'   // textarea; podporuje mini-markup (\n, **tučně**)
   | 'select'
   | 'icon'        // výběr ikony z registru Icon
-  | 'image'       // cesta k obrázku; v další fázi výběr z knihovny médií
+  | 'image'       // cesta k obrázku s výběrem z knihovny médií
   | 'lines'       // pole řádků (string[]) jako textarea
-  | 'contact_hours'; // řádky provozní doby globálních kontaktů
+  | 'contact_hours'  // řádky provozní doby globálních kontaktů
+  | 'doc_sections';  // sekce dokumentu (provozní řád): nadpis + odrážky
 
 export type FieldDef = {
   key: string;
@@ -230,6 +231,36 @@ export const TYPES: Record<string, TypeDef> = {
     ],
     empty: { url: '', title: '' },
   },
+  email_template: {
+    label: 'E-mailová šablona',
+    fields: [
+      { key: 'key', label: 'Systémový klíč', widget: 'text', help: 'Neměňte — podle klíče systém šablonu hledá (confirmation, confirmed).' },
+      { key: 'subject', label: 'Předmět', widget: 'text' },
+      {
+        key: 'body', label: 'Text e-mailu', widget: 'multiline',
+        help: 'Zástupné značky: {name}, {activity}, {date}, {hours}, {price}, {payment}, {confirmUrl}, {cancelUrl}.',
+      },
+    ],
+    empty: { key: '', subject: '', body: '' },
+  },
+  ui_text: {
+    label: 'Text průvodce',
+    fields: [
+      { key: 'key', label: 'Systémový klíč', widget: 'text', help: 'Neměňte — podle klíče se text dosazuje na správné místo.' },
+      { key: 'text', label: 'Text', widget: 'multiline', help: MARKUP_HELP },
+    ],
+    empty: { key: '', text: '' },
+  },
+  doc: {
+    label: 'Dokument',
+    fields: [
+      { key: 'title', label: 'Nadpis', widget: 'text' },
+      { key: 'intro', label: 'Úvodní text', widget: 'multiline' },
+      { key: 'sections', label: 'Sekce', widget: 'doc_sections' },
+      { key: 'footer', label: 'Závěrečný text', widget: 'multiline' },
+    ],
+    empty: { title: '', intro: '', sections: [], footer: '' },
+  },
 };
 
 export type ZoneDef = {
@@ -315,9 +346,22 @@ export const SECTIONS: Record<string, SectionDef> = {
       { zone: 'global.footer', title: 'Odkazy', type: 'footer_link', repeatable: true },
     ],
   },
+  'global:emails': {
+    title: 'E-maily',
+    zones: [
+      { zone: 'email.templates', title: 'Šablony rezervačních e-mailů', type: 'email_template', repeatable: true },
+    ],
+  },
+  'global:reservation': {
+    title: 'Rezervace — texty',
+    zones: [
+      { zone: 'legal.rad', title: 'Provozní řád (modál při rezervaci)', type: 'doc', repeatable: false },
+      { zone: 'resv.texts', title: 'Texty rezervačního průvodce', type: 'ui_text', repeatable: true },
+    ],
+  },
 };
 
-const PREVIEW_KEYS = ['title', 'label', 'heroTitle', 'lbl', 'text', 'orgName', 'days', 'v', 'year'];
+const PREVIEW_KEYS = ['title', 'label', 'heroTitle', 'lbl', 'subject', 'text', 'orgName', 'days', 'v', 'year'];
 
 /** Krátký náhled objektu do seznamu — preferovaná klíčová pole, jinak první textové. */
 export function previewText(type: string, data: Record<string, unknown>): string {

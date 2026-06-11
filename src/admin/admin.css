@@ -504,6 +504,39 @@
   font-size: 13px;
 }
 
+/* --- Editor dokumentu (provozní řád) --- */
+
+.cms-doc-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.cms-doc-section {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid var(--sk-line);
+  border-radius: 9px;
+  background: var(--sk-cream-100);
+}
+
+.cms-doc-section-head {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.cms-doc-section-head .skp-input {
+  flex: 1;
+  height: 36px;
+  font-size: 13px;
+}
+
 /* --- Média --- */
 
 .cms-media-grid {

@@ -132,4 +132,83 @@ export const DEFAULT_CONTENT = [
   { zone: 'kontakt.cards', type: 'contact_card', data: { icon: 'phone', label: 'Telefon', bigSource: 'phone', big: '', note: 'Správce areálu — nejlépe v provozních hodinách.' } },
   { zone: 'kontakt.cards', type: 'contact_card', data: { icon: 'email', label: 'E-mail', bigSource: 'email', big: '', note: 'Spadáme pod Sokolskou župu Podkrkonošskou – Jiráskovu.' } },
   { zone: 'kontakt.map', type: 'map', data: { url: 'https://mapy.com/s/hevufegega', title: 'Mapa — Sokol Kramolna' } },
+
+  // ---- E-mailové šablony (placeholdery {name}, {activity}, {date}, {hours}, {price}, {payment}, {confirmUrl}, {cancelUrl}) ----
+  {
+    zone: 'email.templates', type: 'email_template', data: {
+      key: 'confirmation',
+      subject: 'Potvrzení rezervace – TJ Sokol Kramolna',
+      body: 'Dobrý den, {name},\n\nVaše rezervace byla přijata. Níže najdete shrnutí a odkazy pro potvrzení nebo zrušení.\n\nAktivita: {activity}\nDatum:    {date}\nHodiny:   {hours}\nCena:     {price} Kč\nPlatba:   {payment}\n\n─────────────────────────────────────────\nPOTVRDIT REZERVACI:\n{confirmUrl}\n\nZRUŠIT REZERVACI:\n{cancelUrl}\n─────────────────────────────────────────\n\nS pozdravem,\nTJ Sokol Kramolna',
+    },
+  },
+  {
+    zone: 'email.templates', type: 'email_template', data: {
+      key: 'confirmed',
+      subject: 'Rezervace potvrzena – TJ Sokol Kramolna',
+      body: 'Dobrý den, {name},\n\nVaše rezervace byla potvrzena. Níže najdete souhrn.\n\nAktivita: {activity}\nDatum:    {date}\nHodiny:   {hours}\nCena:     {price} Kč\nPlatba:   {payment}\n\n─────────────────────────────────────────\nZRUŠIT REZERVACI:\n{cancelUrl}\n─────────────────────────────────────────\n\nS pozdravem,\nTJ Sokol Kramolna',
+    },
+  },
+
+  // ---- Provozní řád (modál při rezervaci) ----
+  {
+    zone: 'legal.rad', type: 'doc', data: {
+      title: 'Provozní řád tenisového kurtu',
+      intro: 'Vítejte na našem kurtu! Abychom udrželi antuku v perfektním stavu pro vás i pro ty, co přijdou po vás, dodržujte prosím tato základní pravidla:',
+      sections: [
+        {
+          title: '1. Klíče a bezpečnost',
+          items: [
+            '**Vstup a odchod:** Klíče od kurtu si vyzvedávejte a vracejte podle domluvených pravidel.',
+            '**Zamykání:** Poslední hráč dne (nebo pokud po vás nikdo nenastupuje) je povinen kurt i zázemí vždy uzamknout.',
+            '**Skládek:** Klíč od kurtu pasuje také do skládku s vybavením. Najdete v něm lajnovačku, vápno, košťata a síť. Po použití nářadí vše ukliďte zpět a skládek zamkněte.',
+          ],
+        },
+        {
+          title: '2. Údržba kurtu a lajnování',
+          items: [
+            '**Kropení:** Pokud je kurt suchý nebo práší, před hrou ho důkladně pokropte. Antuka se tím chrání před poničením.',
+            '**Srovnání povrchu:** Případné díry po skluzu ihned zarovnejte (zašlápněte) ještě během hry.',
+            '**Lajnování:** Kurt nemá pevné lajny. Před hrou (nebo podle potřeby) si kurt nalajnujte vápnem pomocí lajnovačky ze skládku.',
+            '**Úklid po hře:** Každý hráč je povinen po skončení hry kurt stáhnout síťovanou metlou (od krajů ke středu), aby byl připravený pro další hráče.',
+          ],
+        },
+        {
+          title: '3. Obecné zásady',
+          items: [
+            'Na kurt je povolen vstup pouze v tenisové obuvi určené na antuku (hladký vzorek, ne hrubá podrážka/traktory).',
+            'Chovejte se k vybavení ohleduplně a udržujte na kurtu i v jeho okolí pořádek.',
+          ],
+        },
+      ],
+      footer: 'Díky, že pomáháte udržovat kurt v super stavu! Hře zdar!',
+    },
+  },
+
+  // ---- Texty rezervačního průvodce (klíčované; klíče neměnit) ----
+  { zone: 'resv.texts', type: 'ui_text', data: { key: 'cal_tip', text: 'Klikněte na volné hodiny. Sousední hodiny můžete **spojit do delšího bloku**.' } },
+  { zone: 'resv.texts', type: 'ui_text', data: { key: 'sum_empty', text: 'Zatím nemáte vybraný termín.\nKlikněte na volné hodiny v kalendáři.' } },
+  { zone: 'resv.texts', type: 'ui_text', data: { key: 'step2_lead_verify', text: 'Na e-mail vám pošleme potvrzovací odkaz a detaily rezervace.' } },
+  { zone: 'resv.texts', type: 'ui_text', data: { key: 'step2_lead_noverify', text: 'Na e-mail vám pošleme shrnutí rezervace.' } },
+  { zone: 'resv.texts', type: 'ui_text', data: { key: 'note_placeholder_tenis', text: 'Např. půjčení vybavení, počet hráčů…' } },
+  { zone: 'resv.texts', type: 'ui_text', data: { key: 'note_placeholder_gym', text: 'Např. první návštěva, potřebuji instruktora…' } },
+  { zone: 'resv.texts', type: 'ui_text', data: { key: 'payment_hotove_title', text: 'Osobně' } },
+  { zone: 'resv.texts', type: 'ui_text', data: { key: 'payment_hotove_desc', text: 'Při vrácení klíčů u správce' } },
+  { zone: 'resv.texts', type: 'ui_text', data: { key: 'payment_prevod_title', text: 'Převodem' } },
+  { zone: 'resv.texts', type: 'ui_text', data: { key: 'payment_prevod_desc', text: 'Na účet Sokola Kramolna' } },
+  { zone: 'resv.texts', type: 'ui_text', data: { key: 'payment_full_hotove', text: 'Osobně při vrácení klíčů' } },
+  { zone: 'resv.texts', type: 'ui_text', data: { key: 'payment_full_prevod', text: 'Převodem na účet Sokola' } },
+  { zone: 'resv.texts', type: 'ui_text', data: { key: 'rules_notice', text: 'Vstupem na kurt souhlasíte s' } },
+  { zone: 'resv.texts', type: 'ui_text', data: { key: 'rules_notice_link', text: 'provozním řádem' } },
+  { zone: 'resv.texts', type: 'ui_text', data: { key: 'review_cancel_verify', text: 'Rezervaci lze kdykoliv zdarma zrušit kliknutím na odkaz v potvrzovacím e-mailu.' } },
+  { zone: 'resv.texts', type: 'ui_text', data: { key: 'review_cancel_noverify', text: 'Rezervaci lze zrušit kontaktováním správce.' } },
+  { zone: 'resv.texts', type: 'ui_text', data: { key: 'success_lead_confirm', text: 'Termín je předběžně zarezervován. Aby byla rezervace platná, je nutné ji potvrdit kliknutím na odkaz v e-mailu.' } },
+  { zone: 'resv.texts', type: 'ui_text', data: { key: 'success_lead_done', text: 'Rezervace je platná a termín je zarezervován.' } },
+  { zone: 'resv.texts', type: 'ui_text', data: { key: 'success_title_confirm', text: 'Zkontrolujte e-mail a potvrďte rezervaci' } },
+  { zone: 'resv.texts', type: 'ui_text', data: { key: 'success_note_confirm', text: 'Odkaz k potvrzení jsme odeslali na výše uvedenou adresu. Rezervaci lze stejným odkazem kdykoliv zdarma zrušit.' } },
+  { zone: 'resv.texts', type: 'ui_text', data: { key: 'success_title_auto', text: 'Rezervace je potvrzena automaticky' } },
+  { zone: 'resv.texts', type: 'ui_text', data: { key: 'success_note_auto', text: 'E-mail s odkazem se nepodařilo odeslat, proto jsme rezervaci potvrdili automaticky. Kontaktujte nás, pokud chcete rezervaci zrušit.' } },
+  { zone: 'resv.texts', type: 'ui_text', data: { key: 'success_title_sent', text: 'Potvrzení bylo odesláno na e-mail' } },
+  { zone: 'resv.texts', type: 'ui_text', data: { key: 'success_note_sent', text: 'Shrnutí rezervace jsme odeslali na výše uvedenou adresu. Chcete-li rezervaci zrušit, kontaktujte správce.' } },
+  { zone: 'resv.texts', type: 'ui_text', data: { key: 'success_title_plain', text: 'Rezervace je potvrzena' } },
+  { zone: 'resv.texts', type: 'ui_text', data: { key: 'success_note_plain', text: 'Chcete-li rezervaci zrušit, kontaktujte správce.' } },
 ];
