@@ -140,8 +140,12 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [weekOff]);
 
-  // Zrušit výběr buněk při změně týdne
-  useEffect(() => { setSel({ dayNo: null, slots: [] }); }, [weekOff]);
+  // Zrušit výběr buněk při změně týdne (úprava stavu během renderu místo efektu)
+  const [selWeekOff, setSelWeekOff] = useState(weekOff);
+  if (weekOff !== selWeekOff) {
+    setSelWeekOff(weekOff);
+    setSel({ dayNo: null, slots: [] });
+  }
 
   // Načíst rezervace
   useEffect(() => {
@@ -187,13 +191,15 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
     }
   }
 
-  // Reset editací při změně popupu
-  useEffect(() => {
+  // Reset editací při změně otevřeného popupu (úprava stavu během renderu místo efektu)
+  const [editingPopupId, setEditingPopupId] = useState(popup?.id);
+  if (popup?.id !== editingPopupId) {
+    setEditingPopupId(popup?.id);
     setEditHours(null);
     setEditName(null);
     setEditEmail(null);
     setEditPhone(null);
-  }, [popup?.id]);
+  }
 
   // Mapa rezervací: "YYYY-MM-DD-h" → Reservation[]
   const resMap = useMemo(() => {
@@ -630,7 +636,8 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
                             className="sk-admin-cal-res-btn"
                             onClick={(e) => {
                               e.stopPropagation();
-                              hasMultiple ? setSlotPopup({ date: d, hour: h, list: resList }) : setPopup(res);
+                              if (hasMultiple) setSlotPopup({ date: d, hour: h, list: resList });
+                              else setPopup(res);
                             }}
                             title={hasMultiple ? `${resList.length} rezervace` : res.name}
                             aria-label="Zobrazit rezervace"
