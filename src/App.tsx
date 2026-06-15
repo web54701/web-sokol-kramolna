@@ -17,7 +17,7 @@ function loadState(): AppState {
   try {
     const saved = JSON.parse(localStorage.getItem(LS_KEY) ?? 'null');
     if (saved && typeof saved === 'object') return saved as AppState;
-  } catch {}
+  } catch { /* poškozený localStorage – použij výchozí stav */ }
   return { route: 'home', tenisTab: 'Přehled', gymTab: 'Přehled' };
 }
 
@@ -26,7 +26,7 @@ export default function App() {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    try { localStorage.setItem(LS_KEY, JSON.stringify({ route, tenisTab, gymTab })); } catch {}
+    try { localStorage.setItem(LS_KEY, JSON.stringify({ route, tenisTab, gymTab })); } catch { /* localStorage nedostupný – ignoruj */ }
   }, [route, tenisTab, gymTab]);
 
   const go = (r: Route) => setState((s) => ({
