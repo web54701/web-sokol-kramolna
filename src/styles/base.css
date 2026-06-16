@@ -356,7 +356,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 86px;
+  width: 100px;
   color: var(--sk-cream-50);
   opacity: 0.95;
 }
@@ -364,7 +364,7 @@
 .sk-action-icon img {
   width: 100%;
   height: auto;
-  max-height: 120px;
+  max-height: 130px;
   object-fit: contain;
   display: block;
 }
