@@ -39,14 +39,23 @@ export type ContactGlobalData = {
 export type FooterLinkData = { label: string; href: string };
 export type TextData = { text: string };
 
-export type HeroData = { img: string; imgAlt: string; title: string; subtitle: string };
+export type TextSize = 'sm' | 'md' | 'lg';
+export type HeroData = {
+  img: string;
+  imgAlt: string;
+  title: string;
+  subtitle: string;
+  titleSize?: TextSize;
+  subtitleSize?: TextSize;
+};
+export type CardTone = 'green' | 'rust' | 'forest' | 'graphite' | 'gold';
 export type ActionCardData = {
   img: string;
   title: string;
   sub: string;
   cta: string;
   route: string;
-  tone: 'green' | 'rust';
+  tone: CardTone;
 };
 export type InfoColData = {
   icon: string;

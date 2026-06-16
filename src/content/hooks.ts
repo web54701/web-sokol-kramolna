@@ -26,6 +26,21 @@ export function useSingleton<T = Record<string, unknown>>(zone: string): T | nul
   return (obj?.data as T) ?? null;
 }
 
+/** Jako useSingleton, ale vrací celý objekt včetně `id` (pro WYSIWYG editaci). */
+export function useSingletonObject<T = Record<string, unknown>>(zone: string): ZoneObject<T> | null {
+  const all = useContent();
+  const obj = all.filter((o) => o.zone === zone).sort((a, b) => a.sort - b.sort)[0];
+  return (obj as ZoneObject<T> | undefined) ?? null;
+}
+
+/** Všechny objekty zóny včetně skrytých (pro editaci — skryté se zobrazí ztlumeně). */
+export function useZoneAll<T = Record<string, unknown>>(zone: string): ZoneObject<T>[] {
+  const all = useContent();
+  return all
+    .filter((o) => o.zone === zone)
+    .sort((a, b) => a.sort - b.sort) as ZoneObject<T>[];
+}
+
 const EMPTY_CONTACT: ContactGlobalData = {
   orgName: '', phone: '', email: '', addressLines: [],
   hoursTitle: '', hours: [], hoursNote: '',

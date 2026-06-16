@@ -603,6 +603,26 @@
   box-shadow: 0 0 0 2px rgba(44, 88, 71, 0.25);
 }
 
+/* Popisky na náhledu: rozměry (vlevo nahoře) a název souboru (vpravo dole). */
+.sk-thumb-dims,
+.sk-thumb-name {
+  position: absolute;
+  z-index: 1;
+  font-size: 10px;
+  line-height: 1;
+  padding: 2px 5px;
+  border-radius: 5px;
+  background: rgba(15, 42, 30, 0.8);
+  color: #fff;
+  pointer-events: none;
+  max-width: calc(100% - 8px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sk-thumb-dims { top: 4px; left: 4px; }
+.sk-thumb-name { bottom: 4px; right: 4px; }
+
 .cms-image-field {
   display: flex;
   align-items: center;

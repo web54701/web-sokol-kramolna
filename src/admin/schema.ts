@@ -27,7 +27,16 @@ export type TypeDef = {
 
 export const ICON_OPTIONS = ['pin', 'phone', 'clock', 'shield', 'email', 'cal', 'racket', 'dumbbell'];
 
-const ROUTE_OPTIONS = [
+/** Paleta barev akčních karet (hodnota = CSS třída is-{value}, color = swatch v UI). */
+export const CARD_TONES: { value: string; label: string; color: string; dark?: boolean }[] = [
+  { value: 'green', label: 'Zelená', color: '#1a3a2e' },
+  { value: 'rust', label: 'Cihlová', color: '#c45a35' },
+  { value: 'forest', label: 'Tmavě zelená', color: '#143028' },
+  { value: 'graphite', label: 'Grafit', color: '#2c3e36' },
+  { value: 'gold', label: 'Zlatá', color: '#d4a82a', dark: true },
+];
+
+export const ROUTE_OPTIONS = [
   { value: 'home', label: 'Domů' },
   { value: 'onas', label: 'O nás' },
   { value: 'tenis', label: 'Tenis' },
@@ -104,7 +113,7 @@ export const TYPES: Record<string, TypeDef> = {
       { key: 'route', label: 'Cílová stránka', widget: 'select', options: ROUTE_OPTIONS },
       {
         key: 'tone', label: 'Barva', widget: 'select',
-        options: [{ value: 'green', label: 'Zelená' }, { value: 'rust', label: 'Cihlová' }],
+        options: CARD_TONES.map((t) => ({ value: t.value, label: t.label })),
       },
     ],
     empty: { img: '', title: '', sub: '', cta: 'ZOBRAZIT', route: 'home', tone: 'green' },

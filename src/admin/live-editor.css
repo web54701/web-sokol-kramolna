@@ -1,0 +1,289 @@
+/* ===== WYSIWYG živá editace (LiveEditor + plátno v iframe) ===== */
+
+/* --- Plátno v AdminLayout --- */
+.cms-content-live {
+  padding: 0;
+  /* Definitní výška — .cms-root má jen min-height:100vh, takže height:100% by se smrsklo.
+     Topbar je vysoký 56px. */
+  height: calc(100vh - 56px);
+}
+
+.cms-live {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.cms-live-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--sk-line);
+  background: var(--sk-cream-50);
+  flex-shrink: 0;
+}
+
+.cms-live-toggle {
+  display: flex;
+  gap: 8px;
+}
+
+.cms-live-hint {
+  font-size: 13px;
+  color: var(--sk-mute);
+}
+
+.cms-live-stage {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background: #e9e5dc;
+  display: flex;
+  justify-content: center;
+}
+
+.cms-live-frame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+  background: #fff;
+}
+
+.cms-live-stage.is-mobile {
+  padding: 24px 0;
+}
+.cms-live-stage.is-mobile .cms-live-frame {
+  width: 390px;
+  height: 100%;
+  border-radius: 28px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+  border: 6px solid #1c1c1c;
+}
+
+/* --- Editovatelný text (čárkované orámování) --- */
+.sk-ed-text {
+  position: relative;
+  cursor: text;
+  pointer-events: auto; /* přebíjí případné pointer-events:none na rodiči (hero text) */
+  outline: 1.5px dashed transparent;
+  outline-offset: 4px;
+  border-radius: 2px;
+  transition: outline-color 0.12s ease, background 0.12s ease;
+}
+.sk-ed-text:hover {
+  outline-color: var(--sk-rust);
+  background: rgba(212, 168, 42, 0.12);
+}
+
+.sk-ed-input {
+  font: inherit;
+  color: #11271d;
+  background: rgba(255, 255, 255, 0.97);
+  border: 1.5px dashed var(--sk-rust);
+  border-radius: 4px;
+  padding: 4px 8px;
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  pointer-events: auto;
+}
+
+/* --- Ovladač velikosti písma (hero) --- */
+.sk-ed-size {
+  position: absolute;
+  top: -36px;
+  left: 0;
+  display: inline-flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+  pointer-events: auto;
+}
+.sk-ed-text:hover .sk-ed-size { opacity: 1; }
+.sk-ed-size button {
+  width: 28px;
+  height: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  background: rgba(20, 48, 40, 0.72);
+  color: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sk-ed-size button.is-active {
+  background: var(--sk-rust);
+  border-color: var(--sk-rust);
+}
+
+/* --- Tužka u obrázku (hero) --- */
+.sk-ed-pencil {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 5;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.94);
+  color: #143028;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+.skp-home-hero:hover .sk-ed-pencil { opacity: 1; }
+.sk-ed-pencil:hover { background: #fff; }
+
+/* --- Nástrojová lišta karty (tužka / očičko / popelnice) --- */
+.sk-ed-toolbar {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 4;
+  display: flex;
+  gap: 6px;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+.sk-action-card:hover .sk-ed-toolbar { opacity: 1; }
+.sk-ed-toolbar button {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.94);
+  color: #143028;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.22);
+}
+.sk-ed-toolbar button:hover { background: #fff; }
+
+/* Skrytá karta v editaci — ztlumená. */
+.sk-ed-hidden { opacity: 0.5; }
+
+/* --- Slot pro přidání karty --- */
+.sk-ed-add {
+  background: transparent !important;
+  border: 2px dashed var(--sk-green-400);
+  color: var(--sk-green-600);
+  box-shadow: none !important;
+  flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
+}
+.sk-ed-add:hover {
+  transform: none;
+  border-color: var(--sk-rust);
+  color: var(--sk-rust);
+  background: rgba(196, 90, 53, 0.05) !important;
+}
+.sk-ed-add span {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* --- Doplňky modálu karty --- */
+.cms-aspect-hint {
+  margin: 0;
+  padding: 8px 10px;
+  font-size: 12px;
+  color: var(--sk-mute);
+  background: var(--sk-cream-100);
+  border-radius: 8px;
+}
+
+.sk-card-img-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.sk-card-img-preview {
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: var(--sk-green-800);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.sk-card-img-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.sk-card-img-empty {
+  font-size: 10px;
+  color: var(--sk-cream-200);
+  text-align: center;
+}
+
+.sk-tone-palette {
+  display: flex;
+  gap: 10px;
+}
+.sk-tone-swatch {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+.sk-tone-swatch.is-active {
+  border-color: var(--sk-ink);
+  box-shadow: 0 0 0 2px var(--sk-cream-50), 0 0 0 4px var(--sk-ink);
+}
+
+/* --- Krok úpravy velikosti obrázku --- */
+.sk-resize-preview {
+  width: 100%;
+  height: 220px;
+  border-radius: 10px;
+  overflow: hidden;
+  background:
+    repeating-conic-gradient(var(--sk-cream-200) 0% 25%, var(--sk-cream-100) 0% 50%) 0 / 20px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sk-resize-preview img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  display: block;
+}
+
+.sk-resize-dims {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+}
+.sk-resize-dims label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--sk-ink-soft);
+  flex: 1;
+}
+.sk-resize-lock {
+  padding-bottom: 8px;
+  font-size: 16px;
+  user-select: none;
+}

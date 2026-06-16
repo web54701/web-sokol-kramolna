@@ -506,14 +506,21 @@ textarea.skp-input { height: 80px; padding-top: 11px; resize: none; }
   max-width: 360px;
 }
 
+.skp-home-hero-text h1.sk-size-sm { font-size: clamp(32px, 4vw, 52px); }
+.skp-home-hero-text h1.sk-size-lg { font-size: clamp(52px, 7vw, 92px); }
+.skp-home-hero-text p.sk-size-sm { font-size: 15px; }
+.skp-home-hero-text p.sk-size-lg { font-size: 22px; max-width: 420px; }
+
 .skp-home-cards {
   position: relative; z-index: 3;
   margin: -80px 56px 0;
-  display: flex;
+  display: grid;
+  /* Stejně široké karty; využijí plnou šířku (mínus okraje) → při plné šířce 3 vedle sebe.
+     Šířku stránky shora omezuje .sk-page (max-width:1200px). */
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 22px;
-  max-width: 780px;
 }
-.skp-home-cards .sk-action-card { flex: 1; min-height: 196px; }
+.skp-home-cards .sk-action-card { min-height: 196px; }
 
 .skp-home .sk-info-row { padding-top: 32px; }
 
@@ -660,9 +667,9 @@ textarea.skp-input { height: 80px; padding-top: 11px; resize: none; }
   .skp-home-hero-text h1 { font-size: clamp(26px, 8vw, 44px); white-space: normal; }
   .skp-home-hero-text p { font-size: 13px; max-width: 190px; margin-top: 8px; }
 
-  .skp-home-cards { margin: -24px 16px 0; flex-direction: column; gap: 10px; max-width: none; }
-  .skp-home-cards .sk-action-card { min-height: 120px; padding: 20px 18px; gap: 16px; }
-  .sk-action-icon { width: 64px; }
+  .skp-home-cards { margin: -24px 16px 0; grid-template-columns: 1fr; gap: 10px; max-width: none; }
+  .skp-home-cards .sk-action-card { min-height: 120px; padding: 13px 14px; gap: 16px; }
+  .sk-action-icon { width: 74px; }
   .sk-action-icon img { width: 100%; height: auto; object-fit: contain; }
   .sk-action-body { margin-left: 0; }
   .sk-action-title { font-size: 24px; margin: 2px 0 5px; }

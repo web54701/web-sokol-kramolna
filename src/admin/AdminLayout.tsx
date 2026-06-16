@@ -4,12 +4,14 @@ import { PageEditor } from './PageEditor';
 import { UsersScreen } from './UsersScreen';
 import { MediaLibrary } from './MediaLibrary';
 import { PreviewPane } from './PreviewPane';
+import { LiveEditor } from './LiveEditor';
 
 export type CmsPage = 'home' | 'onas' | 'tenis' | 'gym' | 'kontakt';
 
 export type CmsGlobalGroup = 'identity' | 'contact' | 'footer' | 'emails' | 'reservation';
 
 export type CmsSection =
+  | { kind: 'live'; page: 'home' }
   | { kind: 'page'; page: CmsPage }
   | { kind: 'global'; group: CmsGlobalGroup }
   | { kind: 'media' }
@@ -32,13 +34,14 @@ const GLOBAL_ITEMS: { group: CmsGlobalGroup; label: string }[] = [
 ];
 
 function sectionKey(s: CmsSection): string {
+  if (s.kind === 'live') return `live:${s.page}`;
   if (s.kind === 'page') return `page:${s.page}`;
   if (s.kind === 'global') return `global:${s.group}`;
   return s.kind;
 }
 
 export function AdminLayout({ user, onLogout }: { user: AdminUser; onLogout: () => void }) {
-  const [section, setSection] = useState<CmsSection>({ kind: 'page', page: 'home' });
+  const [section, setSection] = useState<CmsSection>({ kind: 'live', page: 'home' });
   const [previewOpen, setPreviewOpen] = useState(false);
 
   const logout = async () => {
@@ -73,7 +76,11 @@ export function AdminLayout({ user, onLogout }: { user: AdminUser; onLogout: () 
       <div className="cms-body">
         <nav className="cms-sidebar">
           <div className="cms-nav-group">
-            <div className="cms-nav-title">Stránky</div>
+            <div className="cms-nav-title">Živá editace</div>
+            {navBtn({ kind: 'live', page: 'home' }, 'Domů (živě)')}
+          </div>
+          <div className="cms-nav-group">
+            <div className="cms-nav-title">Stránky (formulář)</div>
             {PAGE_ITEMS.map((it) => navBtn({ kind: 'page', page: it.page }, it.label))}
           </div>
           <div className="cms-nav-group">
@@ -86,7 +93,8 @@ export function AdminLayout({ user, onLogout }: { user: AdminUser; onLogout: () 
             {navBtn({ kind: 'users' }, 'Uživatelé')}
           </div>
         </nav>
-        <main className="cms-content">
+        <main className={'cms-content' + (section.kind === 'live' ? ' cms-content-live' : '')}>
+          {section.kind === 'live' && <LiveEditor />}
           {(section.kind === 'page' || section.kind === 'global') && (
             <PageEditor sectionKey={sectionKey(section)} />
           )}
