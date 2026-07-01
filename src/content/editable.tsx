@@ -262,6 +262,8 @@ type EditableNoteProps = {
   className?: string;
   /** Text tlačítka pro přidání, když je poznámka prázdná. */
   addLabel?: string;
+  /** Přidá horní mezeru (oddělí poznámku od obsahu nad ní, např. adresy/kontaktu). */
+  spaced?: boolean;
 };
 
 /**
@@ -269,11 +271,14 @@ type EditableNoteProps = {
  * poznámka nevykreslí. V editaci: prázdná → klikatelný placeholder „přidat“,
  * vyplněná → inline úprava + tlačítko „odebrat“ (vymaže obsah).
  */
-export function EditableNote({ value, onSave, className, addLabel = '+ Přidat text' }: EditableNoteProps) {
+export function EditableNote({ value, onSave, className, addLabel = '+ Přidat text', spaced }: EditableNoteProps) {
   const { enabled } = useEdit();
-  if (!enabled) return value ? createElement('p', { className }, renderInline(value)) : null;
+  const gap = spaced ? 'sk-info-note-gap' : '';
+  if (!enabled) {
+    return value ? createElement('p', { className: [gap, className].filter(Boolean).join(' ') || undefined }, renderInline(value)) : null;
+  }
   return (
-    <div className="sk-ed-note-block">
+    <div className={'sk-ed-note-block' + (gap ? ' ' + gap : '')}>
       <EditableText as="p" multiline className={className} value={value} onSave={onSave} placeholder={addLabel} />
       {value && (
         <button type="button" className="sk-ed-note-del" title="Odebrat text" onClick={stop(() => onSave(''))}>

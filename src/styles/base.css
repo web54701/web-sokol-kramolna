@@ -432,6 +432,8 @@
 }
 .sk-info-col ul { list-style: none; padding: 0; }
 .sk-info-col .k { font-weight: 600; color: var(--sk-green-800); display: inline-block; min-width: 64px; }
+/* Mezera nad uživatelským textem u adresy/kontaktu — jako mezera pod tabulkou provozní doby. */
+.sk-info-col .sk-info-note-gap { margin-top: 16px; }
 
 /* ---------- Hamburger (hidden on desktop) ---------- */
 .sk-mob-btn { display: none; }

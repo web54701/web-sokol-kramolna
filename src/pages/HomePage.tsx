@@ -185,8 +185,13 @@ function InfoCol({ col }: { col: ZoneObject<InfoColData> }) {
         </ul>
       )}
 
-      {/* Volitelný uživatelský text na konci sloupce — v libovolné kategorii lze přidat/odebrat/upravit. */}
-      <EditableNote value={body} onSave={(t) => save({ ...col.data, body: t })} />
+      {/* Volitelný uživatelský text na konci sloupce — v libovolné kategorii lze přidat/odebrat/upravit.
+          U adresy/kontaktu (obsah je odstavec) přidáme horní mezeru jako u provozní doby (seznam). */}
+      <EditableNote
+        value={body}
+        onSave={(t) => save({ ...col.data, body: t })}
+        spaced={kind === 'address' || kind === 'contact'}
+      />
 
       {/* Hint o zdroji dat (pouze editace, pouze datové kategorie) — přišpendlený ke dnu. */}
       {kind !== 'text' && <SettingsNote what={SETTINGS_LABEL[kind]} />}
