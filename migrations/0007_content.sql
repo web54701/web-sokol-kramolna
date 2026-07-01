@@ -38,7 +38,7 @@ FROM (VALUES
   ('home.hero', 'hero', 0, '{"img":"/hero.webp","imgAlt":"Antukový tenisový kurt","title":"Sokol Kramolna","subtitle":"Sportovní areál v srdci Kramolny.\nTenisový kurt a posilovna pro všechny."}'),
   ('home.cards', 'action_card', 0, '{"img":"/raketa.webp","title":"Tenis","sub":"Rezervace kurtu\na ceník","cta":"ZOBRAZIT","route":"tenis","tone":"green"}'),
   ('home.cards', 'action_card', 1, '{"img":"/cinka.webp","title":"Posilovna","sub":"Rezervace vstupu\na ceník","cta":"ZOBRAZIT","route":"gym","tone":"rust"}'),
-  ('home.info', 'info_col', 0, '{"icon":"pin","title":"Kde nás najdete","kind":"text","body":"Kramolna 85\n547 01 Kramolna\nokres Náchod"}'),
+  ('home.info', 'info_col', 0, '{"icon":"pin","title":"Kde nás najdete","kind":"address","body":""}'),
   ('home.info', 'info_col', 1, '{"icon":"phone","title":"Kontakt","kind":"contact","body":""}'),
   ('home.info', 'info_col', 2, '{"icon":"clock","title":"Provozní doba","kind":"hours","body":"Podrobnosti na stránkách aktivit."}'),
   ('home.info', 'info_col', 3, '{"icon":"shield","title":"Sokol","kind":"text","body":"Jsme součástí tradiční české tělovýchovné organizace."}'),
