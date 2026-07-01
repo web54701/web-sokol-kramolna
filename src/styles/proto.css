@@ -532,6 +532,9 @@ textarea.skp-input { height: 80px; padding-top: 11px; resize: none; }
   border-top: 1px solid var(--sk-line);
   border-radius: 16px;
   gap: 0;
+  /* Počet sloupců = počet skutečně vykreslených (na webu jen viditelné, v editaci 4).
+     Viditelné sloupce rovnoměrně vyplní šířku pásu — žádná prázdná stopa po skrytí. */
+  grid-template-columns: repeat(var(--info-cols, 4), 1fr);
 }
 .skp-home .skp-info-row .sk-info-col {
   padding: 2px 34px;
@@ -676,8 +679,14 @@ textarea.skp-input { height: 80px; padding-top: 11px; resize: none; }
   .sk-action-sub { font-size: 13px; }
   .sk-action-cta { font-size: 11px; padding-top: 10px; }
 
-  .skp-home .skp-info-row { margin: 10px 0 16px; border-radius: 0; border-left: 0; border-right: 0; }
+  .skp-home .skp-info-row {
+    margin: 10px 0 16px; border-radius: 0; border-left: 0; border-right: 0;
+    /* Mobil: vždy 2 sloupce (ignoruje --info-cols, aby sloupce nebyly přeplácané). */
+    grid-template-columns: 1fr 1fr;
+  }
   .skp-home .skp-info-row .sk-info-col { padding: 2px 10px; }
+  /* Lichý poslední sloupec (např. 3 viditelné) zabere celý řádek — žádné prázdné místo. */
+  .skp-home .skp-info-row .sk-info-col:last-child:nth-child(odd) { grid-column: 1 / -1; }
 
 }
 

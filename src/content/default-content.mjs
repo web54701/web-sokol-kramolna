@@ -46,7 +46,7 @@ export const DEFAULT_CONTENT = [
   { zone: 'home.cards', type: 'action_card', data: { img: '/raketa.webp', title: 'Tenis', sub: 'Rezervace kurtu\na ceník', cta: 'ZOBRAZIT', route: 'tenis', tone: 'green' } },
   { zone: 'home.cards', type: 'action_card', data: { img: '/cinka.webp', title: 'Posilovna', sub: 'Rezervace vstupu\na ceník', cta: 'ZOBRAZIT', route: 'gym', tone: 'rust' } },
 
-  { zone: 'home.info', type: 'info_col', data: { icon: 'pin', title: 'Kde nás najdete', kind: 'text', body: 'Kramolna 85\n547 01 Kramolna\nokres Náchod' } },
+  { zone: 'home.info', type: 'info_col', data: { icon: 'pin', title: 'Kde nás najdete', kind: 'address', body: '' } },
   { zone: 'home.info', type: 'info_col', data: { icon: 'phone', title: 'Kontakt', kind: 'contact', body: '' } },
   { zone: 'home.info', type: 'info_col', data: { icon: 'clock', title: 'Provozní doba', kind: 'hours', body: 'Podrobnosti na stránkách aktivit.' } },
   { zone: 'home.info', type: 'info_col', data: { icon: 'shield', title: 'Sokol', kind: 'text', body: 'Jsme součástí tradiční české tělovýchovné organizace.' } },

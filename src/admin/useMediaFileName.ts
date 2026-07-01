@@ -4,22 +4,25 @@ import { BUNDLED_IMAGES, type MediaRow } from './media-api';
 
 /** Dohledá název souboru obrázku podle jeho URL (nahraná média i výchozí obrázky webu). */
 export function useMediaFileName(src?: string): string | null {
-  const [name, setName] = useState<string | null>(null);
+  // Výchozí obrázky webu poznáme z URL synchronně (bez dotazu na API).
+  const bundled = src && BUNDLED_IMAGES.includes(src) ? src.replace(/^\//, '') : null;
+  // Název nahraného média se dohledává asynchronně; držíme i src, ke kterému patří.
+  const [resolved, setResolved] = useState<{ src: string; name: string | null } | null>(null);
 
   useEffect(() => {
-    setName(null);
-    if (!src) return;
-    if (BUNDLED_IMAGES.includes(src)) { setName(src.replace(/^\//, '')); return; }
+    if (!src || bundled) return;
     let cancelled = false;
     apiGet<MediaRow[]>('/api/admin/media')
       .then((items) => {
         if (cancelled) return;
         const match = items.find((item) => `/media/${item.key}` === src);
-        setName(match ? match.filename : null);
+        setResolved({ src, name: match ? match.filename : null });
       })
-      .catch(() => { if (!cancelled) setName(null); });
+      .catch(() => { if (!cancelled) setResolved({ src, name: null }); });
     return () => { cancelled = true; };
-  }, [src]);
+  }, [src, bundled]);
 
-  return name;
+  if (!src) return null;
+  if (bundled) return bundled;
+  return resolved && resolved.src === src ? resolved.name : null;
 }

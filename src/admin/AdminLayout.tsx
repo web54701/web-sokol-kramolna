@@ -11,7 +11,7 @@ export type CmsPage = 'home' | 'onas' | 'tenis' | 'gym' | 'kontakt';
 export type CmsGlobalGroup = 'identity' | 'contact' | 'footer' | 'emails' | 'reservation';
 
 export type CmsSection =
-  | { kind: 'live'; page: 'home' }
+  | { kind: 'live'; page: CmsPage }
   | { kind: 'page'; page: CmsPage }
   | { kind: 'global'; group: CmsGlobalGroup }
   | { kind: 'media' }
@@ -77,7 +77,7 @@ export function AdminLayout({ user, onLogout }: { user: AdminUser; onLogout: () 
         <nav className="cms-sidebar">
           <div className="cms-nav-group">
             <div className="cms-nav-title">Živá editace</div>
-            {navBtn({ kind: 'live', page: 'home' }, 'Domů (živě)')}
+            {PAGE_ITEMS.map((it) => navBtn({ kind: 'live', page: it.page }, `${it.label} (živě)`))}
           </div>
           <div className="cms-nav-group">
             <div className="cms-nav-title">Stránky (formulář)</div>
@@ -94,7 +94,7 @@ export function AdminLayout({ user, onLogout }: { user: AdminUser; onLogout: () 
           </div>
         </nav>
         <main className={'cms-content' + (section.kind === 'live' ? ' cms-content-live' : '')}>
-          {section.kind === 'live' && <LiveEditor />}
+          {section.kind === 'live' && <LiveEditor page={section.page} />}
           {(section.kind === 'page' || section.kind === 'global') && (
             <PageEditor sectionKey={sectionKey(section)} />
           )}

@@ -1,13 +1,12 @@
-import { lazy, Suspense, useState } from 'react';
+import { lazy, Suspense, useState, type CSSProperties } from 'react';
 import { Icon } from '../components/Icon';
 import { IconByName } from '../components/IconByName';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
 import { useZoneAll, useSingletonObject, useGlobalContact, visibilityClass, type ZoneObject } from '../content/hooks';
 import { useEdit } from '../content/edit-context';
-import { EditableText, EditableImage, CardOverlay, AddCardSlot } from '../content/editable';
+import { EditableText, EditableImage, EditableIcon, EditableNote, HideToggle, CardOverlay, AddCardSlot } from '../content/editable';
 import { HERO_IMAGE_SPEC } from '../content/image-specs';
-import { renderInline } from '../content/inline';
 import type { HeroData, ActionCardData, InfoColData, TextSize } from '../content/types';
 import type { Route } from '../types';
 
@@ -81,7 +80,10 @@ export function HomePage({ onNavigate, isAdmin, onAdminActivate }: Props) {
           <AddCardSlot onClick={() => setCreating(true)} />
         </div>
 
-        <section className="sk-info-row skp-info-row">
+        <section
+          className="sk-info-row skp-info-row"
+          style={{ '--info-cols': visibleInfo.length } as CSSProperties}
+        >
           {visibleInfo.map((col) => <InfoCol key={col.id} col={col} />)}
         </section>
 
@@ -139,31 +141,61 @@ function ActionCard({ card, onNavigate }: { card: ZoneObject<ActionCardData>; on
   );
 }
 
+/** Poznámka v editaci: data sloupce se spravují v globálním nastavení. */
+function SettingsNote({ what }: { what: string }) {
+  const { enabled } = useEdit();
+  if (!enabled) return null;
+  return (
+    <div className="sk-ed-note">
+      <Icon.gear size={12} /> {what} se přebírá z nastavení → Kontaktní údaje.
+    </div>
+  );
+}
+
 function InfoCol({ col }: { col: ZoneObject<InfoColData> }) {
+  const edit = useEdit();
   const contact = useGlobalContact();
   const { icon, title, kind, body } = col.data;
+  const save = (data: InfoColData) => { void edit.patchData(col.id, data); };
 
   return (
-    <div className={'sk-info-col' + visibilityClass(col.visibility)}>
-      <h4><span className="sk-info-icon"><IconByName name={icon} /></span> {title}</h4>
+    <div className={'sk-info-col' + visibilityClass(col.visibility) + (col.hidden ? ' sk-ed-hidden' : '')}>
+      <HideToggle hidden={col.hidden} onToggle={() => void edit.setHidden(col.id, !col.hidden)} />
+
+      {kind === 'text' ? (
+        <h4>
+          <span className="sk-info-icon"><EditableIcon name={icon} onPick={(n) => save({ ...col.data, icon: n })} /></span>
+          <EditableText as="span" value={title} onSave={(t) => save({ ...col.data, title: t })} />
+        </h4>
+      ) : (
+        <h4><span className="sk-info-icon"><IconByName name={icon} /></span> {title}</h4>
+      )}
+
+      {kind === 'address' && (
+        <p>{contact.addressLines.map((line, i) => <span key={i}>{line}{i < contact.addressLines.length - 1 && <br />}</span>)}</p>
+      )}
       {kind === 'contact' && (
         <p>{contact.phone}<br />{contact.email}</p>
       )}
       {kind === 'hours' && (
-        <>
-          <ul>
-            {contact.hours.map((h, i) => (
-              <li key={i}><span className="k">{h.daysShort}</span>{h.time}</li>
-            ))}
-          </ul>
-          {body && (
-            <p style={{ marginTop: 8, fontSize: 12, color: 'var(--sk-mute)' }}>
-              {body}
-            </p>
-          )}
-        </>
+        <ul>
+          {contact.hours.map((h, i) => (
+            <li key={i}><span className="k">{h.daysShort}</span>{h.time}</li>
+          ))}
+        </ul>
       )}
-      {kind === 'text' && <p>{renderInline(body)}</p>}
+
+      {/* Volitelný uživatelský text na konci sloupce — v libovolné kategorii lze přidat/odebrat/upravit. */}
+      <EditableNote value={body} onSave={(t) => save({ ...col.data, body: t })} />
+
+      {/* Hint o zdroji dat (pouze editace, pouze datové kategorie) — přišpendlený ke dnu. */}
+      {kind !== 'text' && <SettingsNote what={SETTINGS_LABEL[kind]} />}
     </div>
   );
 }
+
+const SETTINGS_LABEL: Record<string, string> = {
+  address: 'Adresa',
+  contact: 'Telefon a e-mail',
+  hours: 'Provozní doba',
+};

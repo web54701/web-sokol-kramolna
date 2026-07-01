@@ -60,7 +60,7 @@ export type ActionCardData = {
 export type InfoColData = {
   icon: string;
   title: string;
-  kind: 'text' | 'contact' | 'hours';
+  kind: 'text' | 'contact' | 'hours' | 'address';
   body: string;
 };
 

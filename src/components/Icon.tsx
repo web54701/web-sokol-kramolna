@@ -106,6 +106,9 @@ export const Icon = {
       <path d="M4 7h16M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13M10 11v6M14 11v6"/>
     </svg>
   ),
+  sokol: ({ size = 22 }: IconProps) => (
+    <img src="/logo_sokol.png" width={size} height={size} alt="" style={{ objectFit: 'contain', display: 'block' }} />
+  ),
   gear: ({ size = 22 }: IconProps) => (
     <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="3"/>

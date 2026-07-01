@@ -1,6 +1,8 @@
 // Registr typů objektů a struktury sekcí CMS.
 // Řídí generické formuláře (ObjectForm) i seznamy zón (ZoneList).
 
+import { ICON_NAMES } from '../content/icon-names';
+
 export type FieldWidget =
   | 'text'
   | 'multiline'   // textarea; podporuje mini-markup (\n, **tučně**)
@@ -25,7 +27,7 @@ export type TypeDef = {
   empty: Record<string, unknown>;  // výchozí data nového objektu
 };
 
-export const ICON_OPTIONS = ['pin', 'phone', 'clock', 'shield', 'email', 'cal', 'racket', 'dumbbell'];
+export const ICON_OPTIONS = ICON_NAMES;
 
 /** Paleta barev akčních karet (hodnota = CSS třída is-{value}, color = swatch v UI). */
 export const CARD_TONES: { value: string; label: string; color: string; dark?: boolean }[] = [
@@ -127,6 +129,7 @@ export const TYPES: Record<string, TypeDef> = {
         key: 'kind', label: 'Obsah', widget: 'select',
         options: [
           { value: 'text', label: 'Vlastní text' },
+          { value: 'address', label: 'Adresa (z globálních kontaktů)' },
           { value: 'contact', label: 'Telefon + e-mail (z globálních kontaktů)' },
           { value: 'hours', label: 'Provozní doba (z globálních kontaktů)' },
         ],
@@ -136,7 +139,7 @@ export const TYPES: Record<string, TypeDef> = {
     empty: { icon: 'pin', title: '', kind: 'text', body: '' },
   },
   pagehead: {
-    label: 'Úvod stránky',
+    label: 'Název stránky',
     fields: [
       { key: 'title', label: 'Nadpis (H1)', widget: 'text' },
       { key: 'intro', label: 'Úvodní text', widget: 'multiline' },
@@ -297,7 +300,7 @@ export const SECTIONS: Record<string, SectionDef> = {
   'page:onas': {
     title: 'O nás',
     zones: [
-      { zone: 'onas.head', title: 'Úvod stránky', type: 'pagehead', repeatable: false },
+      { zone: 'onas.head', title: 'Název stránky', type: 'pagehead', repeatable: false },
       { zone: 'onas.lead', title: 'Hlavní odstavec (lead)', type: 'text', repeatable: false },
       { zone: 'onas.body', title: 'Odstavce textu', type: 'paragraph', repeatable: true },
       { zone: 'onas.values', title: 'Hodnoty', type: 'value_card', repeatable: true },
@@ -308,7 +311,7 @@ export const SECTIONS: Record<string, SectionDef> = {
   'page:tenis': {
     title: 'Tenis',
     zones: [
-      { zone: 'tenis.head', title: 'Úvod stránky', type: 'pagehead', repeatable: false },
+      { zone: 'tenis.head', title: 'Název stránky', type: 'pagehead', repeatable: false },
       { zone: 'tenis.meta', title: 'Texty stránky', type: 'activity_meta', repeatable: false },
       { zone: 'tenis.stats', title: 'Statistiky', type: 'stat', repeatable: true },
       { zone: 'tenis.rules', title: 'Pravidla rezervace', type: 'rule', repeatable: true },
@@ -319,7 +322,7 @@ export const SECTIONS: Record<string, SectionDef> = {
   'page:gym': {
     title: 'Posilovna',
     zones: [
-      { zone: 'gym.head', title: 'Úvod stránky', type: 'pagehead', repeatable: false },
+      { zone: 'gym.head', title: 'Název stránky', type: 'pagehead', repeatable: false },
       { zone: 'gym.meta', title: 'Texty stránky', type: 'activity_meta', repeatable: false },
       { zone: 'gym.stats', title: 'Statistiky', type: 'stat', repeatable: true },
       { zone: 'gym.rules', title: 'Pravidla rezervace', type: 'rule', repeatable: true },
@@ -330,7 +333,7 @@ export const SECTIONS: Record<string, SectionDef> = {
   'page:kontakt': {
     title: 'Kontakt',
     zones: [
-      { zone: 'kontakt.head', title: 'Úvod stránky', type: 'pagehead', repeatable: false },
+      { zone: 'kontakt.head', title: 'Název stránky', type: 'pagehead', repeatable: false },
       { zone: 'kontakt.cards', title: 'Kontaktní karty', type: 'contact_card', repeatable: true },
       { zone: 'kontakt.map', title: 'Mapa', type: 'map', repeatable: false },
     ],

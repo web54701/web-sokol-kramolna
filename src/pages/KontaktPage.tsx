@@ -1,8 +1,8 @@
-import { IconByName } from '../components/IconByName';
 import { Header } from '../components/Header';
 import { Footer } from '../components/Footer';
-import { useZone, useSingleton, useGlobalContact, visibilityClass } from '../content/hooks';
-import { renderInline } from '../content/inline';
+import { useZoneAll, useSingletonObject, useGlobalContact, visibilityClass } from '../content/hooks';
+import { useEdit } from '../content/edit-context';
+import { EditableText, EditableIcon, RowActions, AddRowSlot } from '../content/editable';
 import type { PageheadData, ContactCardData, ContactGlobalData, MapData } from '../content/types';
 import type { Route } from '../types';
 
@@ -20,15 +20,22 @@ function cardBig(card: ContactCardData, contact: ContactGlobalData): string {
 }
 
 export function KontaktPage({ onNavigate, isAdmin, onAdminActivate }: Props) {
-  const head = useSingleton<PageheadData>('kontakt.head');
-  const cards = useZone<ContactCardData>('kontakt.cards');
-  const map = useSingleton<MapData>('kontakt.map');
+  const edit = useEdit();
+  const head = useSingletonObject<PageheadData>('kontakt.head');
+  const allCards = useZoneAll<ContactCardData>('kontakt.cards');
+  const map = useSingletonObject<MapData>('kontakt.map');
   const contact = useGlobalContact();
+
+  const cards = edit.enabled ? allCards : allCards.filter((c) => !c.hidden);
 
   const today = new Date();
   const dayOfWeek = today.getDay();
   const isWeekendToday = dayOfWeek === 0 || dayOfWeek === 6;
   const todayName = DOW_FULL[dayOfWeek];
+
+  const saveHead = (patch: Partial<PageheadData>) => {
+    if (head) void edit.patchData(head.id, { ...head.data, ...patch });
+  };
 
   return (
     <div className="sk-page skp-page">
@@ -37,8 +44,8 @@ export function KontaktPage({ onNavigate, isAdmin, onAdminActivate }: Props) {
       <div className="sk-pagewrap">
         <div className="sk-pagehead">
           <div className="sk-pagehead-l">
-            <h1>{head?.title}</h1>
-            <p>{head?.intro}</p>
+            <EditableText as="h1" value={head?.data.title ?? ''} onSave={(t) => saveHead({ title: t })} />
+            <EditableText as="p" multiline value={head?.data.intro ?? ''} onSave={(t) => saveHead({ intro: t })} />
           </div>
         </div>
 
@@ -46,19 +53,32 @@ export function KontaktPage({ onNavigate, isAdmin, onAdminActivate }: Props) {
           <div className="skp-contact-grid">
             <div className="skp-contact-cards">
               {cards.map((c) => (
-                <div key={c.id} className={'skp-contact-card' + visibilityClass(c.visibility)}>
-                  <div className="ic"><IconByName name={c.data.icon} /></div>
+                <div key={c.id} className={'skp-contact-card sk-ed-row' + visibilityClass(c.visibility) + (c.hidden ? ' sk-ed-hidden' : '')}>
+                  <div className="ic">
+                    <EditableIcon name={c.data.icon} onPick={(n) => void edit.patchData(c.id, { ...c.data, icon: n })} />
+                  </div>
                   <div>
-                    <div className="lbl">{c.data.label}</div>
+                    <EditableText as="div" className="lbl" value={c.data.label} onSave={(t) => void edit.patchData(c.id, { ...c.data, label: t })} />
                     <div className="big">{cardBig(c.data, contact)}</div>
                     <div className="small">
                       {c.data.bigSource === 'address'
                         ? contact.addressLines.flatMap((line, i) => i === 0 ? [line] : [<br key={i} />, line])
-                        : renderInline(c.data.note)}
+                        : <EditableText as="span" multiline value={c.data.note} onSave={(t) => void edit.patchData(c.id, { ...c.data, note: t })} />}
                     </div>
                   </div>
+                  <RowActions
+                    hidden={c.hidden}
+                    onToggleHidden={() => void edit.setHidden(c.id, !c.hidden)}
+                    onDelete={() => { if (window.confirm('Opravdu smazat kontaktní kartu?')) void edit.remove(c.id); }}
+                  />
                 </div>
               ))}
+              <AddRowSlot
+                label="Přidat kontaktní kartu"
+                onClick={() => void edit.createInZone('kontakt.cards', 'contact_card', {
+                  icon: 'pin', label: 'Nový kontakt', bigSource: 'custom', big: '', note: '',
+                })}
+              />
 
               <section className="sk-panel sk-hours" style={{ marginTop: 2 }}>
                 <h3>{contact.hoursTitle}</h3>
@@ -83,11 +103,11 @@ export function KontaktPage({ onNavigate, isAdmin, onAdminActivate }: Props) {
             {map && (
               <div className="skp-map">
                 <iframe
-                  src={map.url}
+                  src={map.data.url}
                   width="400"
                   height="280"
                   style={{ border: 'none', width: '100%', height: '100%', display: 'block' }}
-                  title={map.title}
+                  title={map.data.title}
                 />
               </div>
             )}

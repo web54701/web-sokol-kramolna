@@ -1,13 +1,22 @@
 import { useState } from 'react';
+import type { CmsPage } from './AdminLayout';
 import './live-editor.css';
 
 type Device = 'desktop' | 'mobile';
 
+const PAGE_LABELS: Record<CmsPage, string> = {
+  home: 'domovské stránky',
+  onas: 'stránky O nás',
+  tenis: 'stránky Tenis',
+  gym: 'stránky Posilovna',
+  kontakt: 'stránky Kontakt',
+};
+
 /**
- * WYSIWYG plátno domovské stránky. Skutečná stránka běží v iframe (/admin/canvas),
+ * WYSIWYG plátno stránky. Skutečná stránka běží v iframe (/admin/canvas),
  * takže přepínač desktop/mobil věrně přepíná responzivní breakpointy.
  */
-export function LiveEditor() {
+export function LiveEditor({ page }: { page: CmsPage }) {
   const [device, setDevice] = useState<Device>('desktop');
 
   return (
@@ -26,7 +35,12 @@ export function LiveEditor() {
         <span className="cms-live-hint">Najeďte myší na obsah a upravte ho přímo na stránce. Změny se ukládají hned.</span>
       </div>
       <div className={'cms-live-stage' + (device === 'mobile' ? ' is-mobile' : '')}>
-        <iframe src="/admin/canvas" title="Editace domovské stránky" className="cms-live-frame" />
+        <iframe
+          key={page}
+          src={`/admin/canvas?page=${page}`}
+          title={`Editace ${PAGE_LABELS[page]}`}
+          className="cms-live-frame"
+        />
       </div>
     </div>
   );

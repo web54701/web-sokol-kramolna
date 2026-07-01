@@ -42,31 +42,32 @@ export function EditorProvider({ children }: { children: ReactNode }) {
   const patchData = async (id: number, data: Record<string, unknown>) => {
     const obj = objects?.find((o) => o.id === id);
     if (!obj) return;
+    // Optimistická aktualizace HNED (před síťovým požadavkem) — náhled se překreslí
+    // okamžitě se správnou hodnotou, nezávisle na časování po await (viz Firefox).
+    setObjects((prev) => prev?.map((o) => (o.id === id ? { ...o, data } : o)) ?? prev);
     if (obj.id < 0) {
       // Fallback objekt — zhmotníme POSTem a převezmeme reálné id.
       const res = await apiSend<{ id: number }>('POST', '/api/admin/content', {
         zone: obj.zone, type: obj.type, data, sort: obj.sort,
       });
-      setObjects((prev) => prev?.map((o) => (o.id === id ? { ...o, id: res.id, data } : o)) ?? prev);
+      setObjects((prev) => prev?.map((o) => (o.id === id ? { ...o, id: res.id } : o)) ?? prev);
     } else {
       await apiSend('PATCH', `/api/admin/content/${id}`, { data });
-      setObjects((prev) => prev?.map((o) => (o.id === id ? { ...o, data } : o)) ?? prev);
     }
   };
 
   const setHidden = async (id: number, hidden: boolean) => {
     const obj = objects?.find((o) => o.id === id);
     if (!obj) return;
+    setObjects((prev) => prev?.map((o) => (o.id === id ? { ...o, hidden } : o)) ?? prev);
     if (obj.id < 0) {
       const res = await apiSend<{ id: number }>('POST', '/api/admin/content', {
         zone: obj.zone, type: obj.type, data: obj.data, sort: obj.sort,
       });
-      const realId = res.id;
-      await apiSend('PATCH', `/api/admin/content/${realId}`, { hidden });
-      setObjects((prev) => prev?.map((o) => (o.id === id ? { ...o, id: realId, hidden } : o)) ?? prev);
+      await apiSend('PATCH', `/api/admin/content/${res.id}`, { hidden });
+      setObjects((prev) => prev?.map((o) => (o.id === id ? { ...o, id: res.id } : o)) ?? prev);
     } else {
       await apiSend('PATCH', `/api/admin/content/${id}`, { hidden });
-      setObjects((prev) => prev?.map((o) => (o.id === id ? { ...o, hidden } : o)) ?? prev);
     }
   };
 
