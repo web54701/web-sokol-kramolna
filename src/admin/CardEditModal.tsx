@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { MediaPickerModal } from './MediaPickerModal';
 import { ImageDims } from './ImageDims';
+import { useMediaFileName } from './useMediaFileName';
 import { CARD_TONES, ROUTE_OPTIONS } from './schema';
 import { Icon } from '../components/Icon';
 import { CARD_ICON_SPEC } from '../content/image-specs';
@@ -28,6 +29,7 @@ export function CardEditModal({ initial, onSave, onClose }: Props) {
   const [route, setRoute] = useState(base.route);
   const [tone, setTone] = useState<CardTone>(base.tone);
   const [picking, setPicking] = useState(false);
+  const fileName = useMediaFileName(img);
 
   const save = () => onSave({ ...base, img, route, tone });
 
@@ -50,7 +52,11 @@ export function CardEditModal({ initial, onSave, onClose }: Props) {
                 <Icon.pencil size={16} /> Vybrat obrázek
               </button>
             </div>
-            <p className="cms-field-help">Aktuální obrázek: <ImageDims src={img} /></p>
+            <p className="cms-field-help">
+              {img
+                ? <>Aktuální obrázek: <strong>{fileName ?? '…'}</strong> (<ImageDims src={img} />)</>
+                : 'Aktuální obrázek: bez obrázku'}
+            </p>
             <p className="cms-field-help">{CARD_ICON_SPEC.hint}</p>
           </div>
 
