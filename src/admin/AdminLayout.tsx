@@ -5,6 +5,7 @@ import { UsersScreen } from './UsersScreen';
 import { MediaLibrary } from './MediaLibrary';
 import { PreviewPane } from './PreviewPane';
 import { LiveEditor } from './LiveEditor';
+import { HistoryScreen } from './HistoryScreen';
 
 export type CmsPage = 'home' | 'onas' | 'tenis' | 'gym' | 'kontakt';
 
@@ -15,6 +16,7 @@ export type CmsSection =
   | { kind: 'page'; page: CmsPage }
   | { kind: 'global'; group: CmsGlobalGroup }
   | { kind: 'media' }
+  | { kind: 'history' }
   | { kind: 'users' };
 
 const PAGE_ITEMS: { page: CmsPage; label: string }[] = [
@@ -90,6 +92,7 @@ export function AdminLayout({ user, onLogout }: { user: AdminUser; onLogout: () 
           <div className="cms-nav-group">
             <div className="cms-nav-title">Systém</div>
             {navBtn({ kind: 'media' }, 'Knihovna médií')}
+            {navBtn({ kind: 'history' }, 'Historie změn')}
             {navBtn({ kind: 'users' }, 'Uživatelé')}
           </div>
         </nav>
@@ -100,6 +103,7 @@ export function AdminLayout({ user, onLogout }: { user: AdminUser; onLogout: () 
           )}
           {section.kind === 'users' && <UsersScreen currentUser={user} />}
           {section.kind === 'media' && <MediaLibrary />}
+          {section.kind === 'history' && <HistoryScreen />}
         </main>
       </div>
       {previewOpen && <PreviewPane onClose={() => setPreviewOpen(false)} />}

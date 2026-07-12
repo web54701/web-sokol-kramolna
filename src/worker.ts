@@ -7,6 +7,7 @@ import {
   handlePatchContent,
   handleDeleteContent,
   handleReorderContent,
+  handleListRevisions,
 } from './server/content.ts';
 import {
   handleGetUsers,
@@ -784,6 +785,11 @@ export default {
 
     if (pathname === '/api/admin/content/reorder') {
       if (method === 'PUT') return handleReorderContent(request, env);
+      return new Response('Method Not Allowed', { status: 405 });
+    }
+
+    if (pathname === '/api/admin/content/revisions') {
+      if (method === 'GET') return handleListRevisions(request, env);
       return new Response('Method Not Allowed', { status: 405 });
     }
 

@@ -667,6 +667,172 @@
   font-size: 13px;
 }
 
+/* --- Historie změn --- */
+
+.cms-history-lead,
+.cms-history-empty {
+  font-size: 13px;
+  color: var(--sk-mute);
+  max-width: 640px;
+}
+
+.cms-history-empty {
+  padding: 16px;
+}
+
+.cms-history-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 12px 0 16px;
+}
+
+.cms-history-filter-btn {
+  padding: 5px 12px;
+  border: 1px solid var(--sk-line);
+  border-radius: 99px;
+  background: var(--sk-cream-100);
+  color: var(--sk-ink-soft);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cms-history-filter-btn:hover:not(:disabled) {
+  background: var(--sk-cream-300);
+}
+
+.cms-history-filter-btn.active {
+  background: var(--sk-green-800);
+  border-color: var(--sk-green-800);
+  color: var(--sk-cream-50);
+}
+
+.cms-history-filter-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* --- Modál obnovení z historie --- */
+
+.cms-restore-modal {
+  max-width: 780px;
+  width: min(780px, calc(100vw - 32px));
+}
+
+.cms-restore-row {
+  display: grid;
+  grid-template-columns: auto minmax(90px, auto) 1fr auto 1fr;
+  gap: 6px 10px;
+  align-items: baseline;
+  padding: 8px 0;
+  border-top: 1px solid var(--sk-line-soft);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.cms-restore-row input[type='checkbox'] {
+  align-self: center;
+  cursor: pointer;
+}
+
+.cms-restore-grid-head {
+  border-top: none;
+  padding-bottom: 2px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--sk-mute);
+  cursor: default;
+}
+
+.cms-restore-field {
+  font-weight: 600;
+  color: var(--sk-ink-soft);
+}
+
+.cms-restore-val {
+  padding: 2px 8px;
+  border-radius: 4px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.cms-restore-val-now {
+  background: var(--sk-cream-300);
+  color: var(--sk-ink-soft);
+}
+
+.cms-restore-val-target {
+  background: var(--sk-green-100);
+  color: var(--sk-ink-soft);
+}
+
+.cms-restore-row.is-off .cms-restore-val,
+.cms-restore-row.is-off .cms-restore-field {
+  opacity: 0.45;
+}
+
+.cms-history-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 2px;
+}
+
+.cms-history-diff {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.cms-history-key {
+  color: var(--sk-mute);
+  font-weight: 600;
+}
+
+.cms-history-old {
+  color: var(--sk-ink-soft);
+  background: var(--sk-cream-300);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.cms-history-new {
+  color: var(--sk-ink-soft);
+  background: var(--sk-green-100);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.cms-history-arrow {
+  color: var(--sk-mute);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.cms-history-action {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 7px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--sk-cream-300);
+  color: var(--sk-ink-soft);
+}
+
+.cms-history-action.is-create { background: var(--sk-status-ok); color: var(--sk-ink); }
+.cms-history-action.is-delete { background: var(--sk-rust); color: #fff; }
+.cms-history-action.is-hide,
+.cms-history-action.is-show { background: var(--sk-status-na); color: var(--sk-ink-soft); }
+
 /* --- Náhled webu --- */
 
 .cms-preview-overlay {
