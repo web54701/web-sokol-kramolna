@@ -1,8 +1,9 @@
 import { useRef, useState } from 'react';
+import type { CmsPage } from './AdminLayout';
 
 type Device = 'desktop' | 'mobile';
 
-export function PreviewPane({ onClose }: { onClose: () => void }) {
+export function PreviewPane({ page, onClose }: { page: CmsPage; onClose: () => void }) {
   const [device, setDevice] = useState<Device>('desktop');
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
@@ -31,7 +32,7 @@ export function PreviewPane({ onClose }: { onClose: () => void }) {
         <button className="cms-btn-secondary" onClick={onClose}>✕ Zavřít náhled</button>
       </div>
       <div className={'cms-preview-stage' + (device === 'mobile' ? ' is-mobile' : '')}>
-        <iframe ref={iframeRef} src="/" title="Náhled webu" className="cms-preview-frame" />
+        <iframe ref={iframeRef} src={`/?page=${page}`} title="Náhled webu" className="cms-preview-frame" />
       </div>
     </div>
   );

@@ -1,6 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { CmsPage } from './AdminLayout';
 import './live-editor.css';
+
+function isCmsPage(p: unknown): p is CmsPage {
+  return p === 'home' || p === 'onas' || p === 'tenis' || p === 'gym' || p === 'kontakt';
+}
 
 type Device = 'desktop' | 'mobile';
 
@@ -16,8 +20,19 @@ const PAGE_LABELS: Record<CmsPage, string> = {
  * WYSIWYG plátno stránky. Skutečná stránka běží v iframe (/admin/canvas),
  * takže přepínač desktop/mobil věrně přepíná responzivní breakpointy.
  */
-export function LiveEditor({ page }: { page: CmsPage }) {
+export function LiveEditor({ page, onNavigate }: { page: CmsPage; onNavigate: (page: CmsPage) => void }) {
   const [device, setDevice] = useState<Device>('desktop');
+
+  // Kliknutí na odkaz uvnitř plátna (horní menu, patička) přepne editovanou stránku
+  useEffect(() => {
+    const onMessage = (e: MessageEvent) => {
+      if (e.origin !== window.location.origin) return;
+      const data = e.data as { type?: string; page?: unknown } | null;
+      if (data?.type === 'cms-navigate' && isCmsPage(data.page)) onNavigate(data.page);
+    };
+    window.addEventListener('message', onMessage);
+    return () => window.removeEventListener('message', onMessage);
+  }, [onNavigate]);
 
   return (
     <div className="cms-live">

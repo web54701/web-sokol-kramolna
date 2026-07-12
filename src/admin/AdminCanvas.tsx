@@ -5,10 +5,15 @@ import { OnasPage } from '../pages/OnasPage';
 import { KontaktPage } from '../pages/KontaktPage';
 import { ActivityPage } from '../pages/ActivityPage';
 import type { CmsPage } from './AdminLayout';
+import type { Route } from '../types';
 import './admin.css';      // styly modálů (cms-modal-*) použité v editačních dialozích
 import './live-editor.css';
 
-const noNavigate = () => { /* v editaci nenavigujeme */ };
+// Navigaci (horní menu, patička…) přeposíláme rodičovské administraci,
+// která přepne editovanou stránku i výběr v levém menu
+const navigate = (route: Route) => {
+  window.parent.postMessage({ type: 'cms-navigate', page: route }, window.location.origin);
+};
 
 function readPage(): CmsPage {
   const p = new URLSearchParams(window.location.search).get('page');
@@ -26,11 +31,11 @@ export default function AdminCanvas() {
 
   return (
     <EditorProvider>
-      {page === 'home' && <HomePage onNavigate={noNavigate} />}
-      {page === 'onas' && <OnasPage onNavigate={noNavigate} />}
-      {page === 'kontakt' && <KontaktPage onNavigate={noNavigate} />}
+      {page === 'home' && <HomePage onNavigate={navigate} />}
+      {page === 'onas' && <OnasPage onNavigate={navigate} />}
+      {page === 'kontakt' && <KontaktPage onNavigate={navigate} />}
       {(page === 'tenis' || page === 'gym') && (
-        <ActivityPage mode={page} tab={tab} setTab={setTab} onNavigate={noNavigate} />
+        <ActivityPage mode={page} tab={tab} setTab={setTab} onNavigate={navigate} />
       )}
     </EditorProvider>
   );

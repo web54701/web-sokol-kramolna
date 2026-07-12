@@ -44,7 +44,12 @@ function sectionKey(s: CmsSection): string {
 
 export function AdminLayout({ user, onLogout }: { user: AdminUser; onLogout: () => void }) {
   const [section, setSection] = useState<CmsSection>({ kind: 'live', page: 'home' });
+  // Režim editace stránek: primárně živě, formulář je alternativa (drží se při přepínání stránek)
+  const [pageMode, setPageMode] = useState<'live' | 'page'>('live');
   const [previewOpen, setPreviewOpen] = useState(false);
+
+  // Náhled otevíráme na stránce, která se právě edituje; u sekcí bez stránky na úvodu
+  const previewPage: CmsPage = section.kind === 'live' || section.kind === 'page' ? section.page : 'home';
 
   const logout = async () => {
     try { await apiSend('POST', '/api/auth/logout'); } catch { /* cookie se smaže i tak */ }
@@ -78,12 +83,19 @@ export function AdminLayout({ user, onLogout }: { user: AdminUser; onLogout: () 
       <div className="cms-body">
         <nav className="cms-sidebar">
           <div className="cms-nav-group">
-            <div className="cms-nav-title">Živá editace</div>
-            {PAGE_ITEMS.map((it) => navBtn({ kind: 'live', page: it.page }, `${it.label} (živě)`))}
-          </div>
-          <div className="cms-nav-group">
-            <div className="cms-nav-title">Stránky (formulář)</div>
-            {PAGE_ITEMS.map((it) => navBtn({ kind: 'page', page: it.page }, it.label))}
+            <div className="cms-nav-title">Stránky</div>
+            {PAGE_ITEMS.map((it) => {
+              const active = (section.kind === 'live' || section.kind === 'page') && section.page === it.page;
+              return (
+                <button
+                  key={it.page}
+                  className={`cms-nav-btn${active ? ' active' : ''}`}
+                  onClick={() => setSection({ kind: pageMode, page: it.page })}
+                >
+                  {it.label}
+                </button>
+              );
+            })}
           </div>
           <div className="cms-nav-group">
             <div className="cms-nav-title">Globální</div>
@@ -97,16 +109,29 @@ export function AdminLayout({ user, onLogout }: { user: AdminUser; onLogout: () 
           </div>
         </nav>
         <main className={'cms-content' + (section.kind === 'live' ? ' cms-content-live' : '')}>
-          {section.kind === 'live' && <LiveEditor page={section.page} />}
+          {section.kind === 'live' && (
+            <LiveEditor
+              page={section.page}
+              onNavigate={(p) => setSection({ kind: 'live', page: p })}
+              onSwitchToForm={() => { setPageMode('page'); setSection({ kind: 'page', page: section.page }); }}
+            />
+          )}
           {(section.kind === 'page' || section.kind === 'global') && (
-            <PageEditor sectionKey={sectionKey(section)} />
+            <PageEditor
+              sectionKey={sectionKey(section)}
+              onSwitchToLive={
+                section.kind === 'page'
+                  ? () => { setPageMode('live'); setSection({ kind: 'live', page: section.page }); }
+                  : undefined
+              }
+            />
           )}
           {section.kind === 'users' && <UsersScreen currentUser={user} />}
           {section.kind === 'media' && <MediaLibrary />}
           {section.kind === 'history' && <HistoryScreen />}
         </main>
       </div>
-      {previewOpen && <PreviewPane onClose={() => setPreviewOpen(false)} />}
+      {previewOpen && <PreviewPane page={previewPage} onClose={() => setPreviewOpen(false)} />}
     </div>
   );
 }

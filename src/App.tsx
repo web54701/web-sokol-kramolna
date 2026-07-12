@@ -13,12 +13,19 @@ type AppState = {
   gymTab: string;
 };
 
+function routeFromUrl(): Route | null {
+  const p = new URLSearchParams(window.location.search).get('page');
+  return p === 'home' || p === 'tenis' || p === 'gym' || p === 'onas' || p === 'kontakt' ? p : null;
+}
+
 function loadState(): AppState {
+  let state: AppState = { route: 'home', tenisTab: 'Přehled', gymTab: 'Přehled' };
   try {
     const saved = JSON.parse(localStorage.getItem(LS_KEY) ?? 'null');
-    if (saved && typeof saved === 'object') return saved as AppState;
+    if (saved && typeof saved === 'object') state = saved as AppState;
   } catch { /* poškozený localStorage – použij výchozí stav */ }
-  return { route: 'home', tenisTab: 'Přehled', gymTab: 'Přehled' };
+  const fromUrl = routeFromUrl();
+  return fromUrl ? { ...state, route: fromUrl } : state;
 }
 
 export default function App() {
