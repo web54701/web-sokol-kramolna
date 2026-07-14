@@ -9,7 +9,7 @@ const HOUR_MAX = HOURS[HOURS.length - 1];
 const DOW_LONG = ['Neděle', 'Pondělí', 'Úterý', 'Středa', 'Čtvrtek', 'Pátek', 'Sobota'];
 const DOW_ORDER = [1, 2, 3, 4, 5, 6, 0]; // Po–Ne
 
-const TIME_COL_W = 52;
+const TIME_COL_W = 92;
 const MIN_COL_W = 80;
 
 type Reservation = {
@@ -602,7 +602,7 @@ export function AdminView({ mode }: { mode: ReservationModeKey }) {
 
             {HOURS.map((h) => (
               <React.Fragment key={h}>
-                <div className="sk-admin-cal-time">{h}:00</div>
+                <div className="sk-admin-cal-time">{h}:00 – {h + 1}:00</div>
                 {week.map((d) => {
                   const key = `${toISODate(d)}-${h}`;
                   const resList = resMap.get(key) ?? [];

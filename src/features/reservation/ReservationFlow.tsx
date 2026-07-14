@@ -31,7 +31,7 @@ type Props = {
 type SelState = { dayNo: number | null; slots: number[] };
 type FormState = { name: string; email: string; phone: string; note: string; payment: 'hotove' | 'prevod' };
 
-const TIME_COL_W = 56;
+const TIME_COL_W = 96;
 const MIN_COL_W = 80;
 
 export function ReservationFlow({ mode, onGoOverview }: Props) {
@@ -477,7 +477,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
           ))}
           {HOURS.map((h) => (
             <React.Fragment key={h}>
-              <div className="sk-cal-cell sk-cal-time">{h}:00</div>
+              <div className="sk-cal-cell sk-cal-time">{h}:00 – {h + 1}:00</div>
               {week.map((d) => {
                 const info = slotInfo(d, h);
                 const isSel = epochDay(d) === dayNo && slots.includes(h);
