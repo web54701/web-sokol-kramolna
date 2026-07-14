@@ -20,7 +20,11 @@ const PAGE_LABELS: Record<CmsPage, string> = {
  * WYSIWYG plátno stránky. Skutečná stránka běží v iframe (/admin/canvas),
  * takže přepínač desktop/mobil věrně přepíná responzivní breakpointy.
  */
-export function LiveEditor({ page, onNavigate }: { page: CmsPage; onNavigate: (page: CmsPage) => void }) {
+export function LiveEditor({ page, onNavigate, onSwitchToForm }: {
+  page: CmsPage;
+  onNavigate: (page: CmsPage) => void;
+  onSwitchToForm: () => void;
+}) {
   const [device, setDevice] = useState<Device>('desktop');
 
   // Kliknutí na odkaz uvnitř plátna (horní menu, patička) přepne editovanou stránku
@@ -48,6 +52,9 @@ export function LiveEditor({ page, onNavigate }: { page: CmsPage; onNavigate: (p
           >📱 Mobil</button>
         </div>
         <span className="cms-live-hint">Najeďte myší na obsah a upravte ho přímo na stránce. Změny se ukládají hned.</span>
+        <button className="cms-btn-secondary cms-live-form-switch" onClick={onSwitchToForm}>
+          📝 Formulářové zobrazení
+        </button>
       </div>
       <div className={'cms-live-stage' + (device === 'mobile' ? ' is-mobile' : '')}>
         <iframe

@@ -4,7 +4,10 @@ import { ZoneList } from './ZoneList';
 import { SECTIONS } from './schema';
 import type { ContentObject } from '../content/types';
 
-export function PageEditor({ sectionKey }: { sectionKey: string }) {
+export function PageEditor({ sectionKey, onSwitchToLive }: {
+  sectionKey: string;
+  onSwitchToLive?: () => void;
+}) {
   const section = SECTIONS[sectionKey];
   const [objects, setObjects] = useState<ContentObject[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +26,14 @@ export function PageEditor({ sectionKey }: { sectionKey: string }) {
 
   return (
     <div className="cms-page-editor">
-      <h2 className="cms-page-title">{section.title}</h2>
+      <div className="cms-page-head">
+        <h2 className="cms-page-title">{section.title}</h2>
+        {onSwitchToLive && (
+          <button className="cms-btn-secondary" onClick={onSwitchToLive}>
+            🖱 Živá editace
+          </button>
+        )}
+      </div>
       {section.zones.map((def) => (
         <ZoneList
           key={def.zone}

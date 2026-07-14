@@ -222,6 +222,14 @@
   gap: 16px;
 }
 
+.cms-page-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
 .cms-page-title {
   margin: 0 0 4px;
   font-size: 24px;

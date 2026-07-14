@@ -34,6 +34,10 @@
   color: var(--sk-mute);
 }
 
+.cms-live-form-switch {
+  margin-left: auto;
+}
+
 .cms-live-stage {
   flex: 1;
   min-height: 0;
