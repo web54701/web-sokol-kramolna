@@ -2,8 +2,10 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Icon } from '../../components/Icon';
 import { MODES, type ReservationModeKey } from './reservation.config';
 import { DOW, DAY_MS, epochDay, fmtDM, fmtDMY, toISODate, HOURS, weekStart } from './date-utils';
-import { useZone, useSingleton } from '../../content/hooks';
-import { renderInline } from '../../content/inline';
+import { useZone, useSingletonObject } from '../../content/hooks';
+import { useEdit } from '../../content/edit-context';
+import { EditableText, AddRowSlot } from '../../content/editable';
+import { EditStepNavigator, EmailReturnScreen, T, type EmailScreenKey } from './EditStepNavigator';
 import type { UiTextData, DocData } from '../../content/types';
 
 interface ApiReservation {
@@ -34,8 +36,10 @@ const MIN_COL_W = 80;
 
 export function ReservationFlow({ mode, onGoOverview }: Props) {
   const cfg = MODES[mode];
+  const edit = useEdit();
   const uiTexts = useZone<UiTextData>('resv.texts');
-  const rad = useSingleton<DocData>('legal.rad');
+  const radObj = useSingletonObject<DocData>('legal.rad');
+  const rad = radObj?.data ?? null;
   // Text průvodce dle klíče; fallback na výchozí znění, kdyby objekt v DB chyběl.
   const t = (key: string, fallback: string): string =>
     uiTexts.find((o) => o.data.key === key)?.data.text ?? fallback;
@@ -45,8 +49,18 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
   const [emailVerification, setEmailVerification] = useState(true);
   const [weekOff, setWeekOff] = useState(0);
   const calScrollRef = useRef<HTMLDivElement>(null);
-  const [sel, setSel] = useState<SelState>({ dayNo: null, slots: [] });
+  // Náhled návratové stránky z e-mailu (jen v editaci; přepíná navigátor)
+  const [emailScreen, setEmailScreen] = useState<EmailScreenKey | null>(null);
+  // Na editačním plátně startuje průvodce s ukázkovými daty, aby šly kroky 2–4
+  // procházet bez klikání — a bez čtení/zápisu localStorage.
+  const [sel, setSel] = useState<SelState>(() =>
+    edit.enabled
+      ? { dayNo: epochDay(new Date(Date.now() + DAY_MS)), slots: [17, 18] }
+      : { dayNo: null, slots: [] });
   const [form, setForm] = useState<FormState>(() => {
+    if (edit.enabled) {
+      return { name: 'Jan Novák', email: 'jan@email.cz', phone: '+420 777 123 456', note: '', payment: 'hotove' };
+    }
     try {
       const saved = localStorage.getItem('skp-contact');
       const c = saved ? JSON.parse(saved) : {};
@@ -112,8 +126,9 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
       .catch(() => setBlockedSlots([]));
   }, [mode]);
 
-  // Načíst nastavení e-mailového ověřování
+  // Načíst nastavení e-mailového ověřování (v editaci ho řídí navigátor stavů)
   useEffect(() => {
+    if (edit.enabled) return;
     fetch(`/api/settings?activity=${mode}`)
       .then(r => r.json())
       .then((data: unknown) => {
@@ -121,7 +136,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
         setEmailVerification(d.email_verification);
       })
       .catch(() => setEmailVerification(true));
-  }, [mode]);
+  }, [mode, edit.enabled]);
 
   const rangeLabel = `${fmtDM(week[0])} – ${fmtDMY(week[6])}`;
 
@@ -197,6 +212,9 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
   const formOk = nameOk && emailOk && phoneOk;
 
   async function submit() {
+    // Na editačním plátně se rezervace nikdy neodesílá (žádný POST ani e-maily) —
+    // závěrečné obrazovky se přepínají navigátorem stavů.
+    if (edit.enabled) return;
     if (!selDate || isSubmitting) return;
     setIsSubmitting(true);
     setSubmitError(null);
@@ -249,31 +267,52 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
     window.scrollTo(0, 0);
   }
 
+  // Plovoucí přepínač stavů průvodce — jen na editačním plátně
+  const navigator = edit.enabled ? (
+    <EditStepNavigator
+      step={step} setStep={goStep}
+      emailVerification={emailVerification} setEmailVerification={setEmailVerification}
+      emailSent={emailSent} setEmailSent={setEmailSent}
+      showRules={showRules} setShowRules={setShowRules}
+      emailScreen={emailScreen} setEmailScreen={setEmailScreen}
+    />
+  ) : null;
+
+  // ---------- NÁVRATOVÉ STRÁNKY Z E-MAILU (jen editace) ----------
+  if (edit.enabled && emailScreen) {
+    return (
+      <>
+        <EmailReturnScreen screen={emailScreen} />
+        {navigator}
+      </>
+    );
+  }
+
   // ---------- SUCCESS ----------
   if (step === 4) {
     // requiresConfirmation = ověřování zapnuto A e-mail byl odeslán
     const requiresConfirmation = emailVerification && emailSent;
 
-    let leadText: string;
-    let emailSectionTitle: string;
-    let emailSectionNote: string;
+    let leadText: React.ReactNode;
+    let emailSectionTitle: React.ReactNode;
+    let emailSectionNote: React.ReactNode;
 
     if (requiresConfirmation) {
-      leadText = t('success_lead_confirm', 'Termín je předběžně zarezervován. Aby byla rezervace platná, je nutné ji potvrdit kliknutím na odkaz v e-mailu.');
-      emailSectionTitle = t('success_title_confirm', 'Zkontrolujte e-mail a potvrďte rezervaci');
-      emailSectionNote = t('success_note_confirm', 'Odkaz k potvrzení jsme odeslali na výše uvedenou adresu. Rezervaci lze stejným odkazem kdykoliv zdarma zrušit.');
+      leadText = <T k="success_lead_confirm" fallback="Termín je předběžně zarezervován. Aby byla rezervace platná, je nutné ji potvrdit kliknutím na odkaz v e-mailu." />;
+      emailSectionTitle = <T k="success_title_confirm" fallback="Zkontrolujte e-mail a potvrďte rezervaci" />;
+      emailSectionNote = <T k="success_note_confirm" fallback="Odkaz k potvrzení jsme odeslali na výše uvedenou adresu. Rezervaci lze stejným odkazem kdykoliv zdarma zrušit." />;
     } else if (emailVerification && !emailSent) {
-      leadText = t('success_lead_done', 'Rezervace je platná a termín je zarezervován.');
-      emailSectionTitle = t('success_title_auto', 'Rezervace je potvrzena automaticky');
-      emailSectionNote = t('success_note_auto', 'E-mail s odkazem se nepodařilo odeslat, proto jsme rezervaci potvrdili automaticky. Kontaktujte nás, pokud chcete rezervaci zrušit.');
+      leadText = <T k="success_lead_done" fallback="Rezervace je platná a termín je zarezervován." />;
+      emailSectionTitle = <T k="success_title_auto" fallback="Rezervace je potvrzena automaticky" />;
+      emailSectionNote = <T k="success_note_auto" fallback="E-mail s odkazem se nepodařilo odeslat, proto jsme rezervaci potvrdili automaticky. Kontaktujte nás, pokud chcete rezervaci zrušit." />;
     } else if (emailSent) {
-      leadText = t('success_lead_done', 'Rezervace je platná a termín je zarezervován.');
-      emailSectionTitle = t('success_title_sent', 'Potvrzení bylo odesláno na e-mail');
-      emailSectionNote = t('success_note_sent', 'Shrnutí rezervace jsme odeslali na výše uvedenou adresu. Chcete-li rezervaci zrušit, kontaktujte správce.');
+      leadText = <T k="success_lead_done" fallback="Rezervace je platná a termín je zarezervován." />;
+      emailSectionTitle = <T k="success_title_sent" fallback="Potvrzení bylo odesláno na e-mail" />;
+      emailSectionNote = <T k="success_note_sent" fallback="Shrnutí rezervace jsme odeslali na výše uvedenou adresu. Chcete-li rezervaci zrušit, kontaktujte správce." />;
     } else {
-      leadText = t('success_lead_done', 'Rezervace je platná a termín je zarezervován.');
-      emailSectionTitle = t('success_title_plain', 'Rezervace je potvrzena');
-      emailSectionNote = t('success_note_plain', 'Chcete-li rezervaci zrušit, kontaktujte správce.');
+      leadText = <T k="success_lead_done" fallback="Rezervace je platná a termín je zarezervován." />;
+      emailSectionTitle = <T k="success_title_plain" fallback="Rezervace je potvrzena" />;
+      emailSectionNote = <T k="success_note_plain" fallback="Chcete-li rezervaci zrušit, kontaktujte správce." />;
     }
 
     return (
@@ -307,7 +346,9 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
             <div className="row"><span className="k">Čas</span><span className="v">{timeLabel} · {hoursCount} h</span></div>
             {mode === 'gym' && <div className="row"><span className="k">Míst</span><span className="v">{spots}</span></div>}
             <div className="row"><span className="k">Jméno</span><span className="v">{form.name}</span></div>
-            <div className="row"><span className="k">Platba</span><span className="v">{form.payment === 'hotove' ? t('payment_full_hotove', 'Osobně při vrácení klíčů') : t('payment_full_prevod', 'Převodem na účet Sokola')}</span></div>
+            <div className="row"><span className="k">Platba</span><span className="v">{form.payment === 'hotove'
+              ? <T k="payment_full_hotove" fallback="Osobně při vrácení klíčů" />
+              : <T k="payment_full_prevod" fallback="Převodem na účet Sokola" />}</span></div>
             <div className="row"><span className="k">Celkem</span><span className="v" style={{ fontSize: 16 }}>{total} Kč</span></div>
           </div>
 
@@ -316,6 +357,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
             <button className="skp-btn-primary" onClick={onGoOverview}>Hotovo</button>
           </div>
         </div>
+        {navigator}
       </div>
     );
   }
@@ -328,7 +370,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
 
       {hoursCount === 0 ? (
         <div className="skp-sum-empty">
-          {renderInline(t('sum_empty', 'Zatím nemáte vybraný termín.\nKlikněte na volné hodiny v kalendáři.'))}
+          <T k="sum_empty" fallback={'Zatím nemáte vybraný termín.\nKlikněte na volné hodiny v kalendáři.'} />
         </div>
       ) : (
         <>
@@ -477,7 +519,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
         </div>
         <div className="skp-cal-tip">
           <Icon.clock size={15} />
-          <span>{renderInline(t('cal_tip', 'Klikněte na volné hodiny. Sousední hodiny můžete **spojit do delšího bloku**.'))}</span>
+          <T as="span" k="cal_tip" fallback="Klikněte na volné hodiny. Sousední hodiny můžete **spojit do delšího bloku**." />
         </div>
       </div>
     );
@@ -486,7 +528,9 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
     mainContent = (
       <div className="skp-form-card">
         <h3>Vaše údaje</h3>
-        <p className="lead">{emailVerification ? t('step2_lead_verify', 'Na e-mail vám pošleme potvrzovací odkaz a detaily rezervace.') : t('step2_lead_noverify', 'Na e-mail vám pošleme shrnutí rezervace.')}</p>
+        <p className="lead">{emailVerification
+          ? <T k="step2_lead_verify" fallback="Na e-mail vám pošleme potvrzovací odkaz a detaily rezervace." />
+          : <T k="step2_lead_noverify" fallback="Na e-mail vám pošleme shrnutí rezervace." />}</p>
         <div className="skp-form-grid">
           <div className="skp-field full">
             <label>Jméno a příjmení <span className="req">*</span></label>
@@ -508,26 +552,41 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
           </div>
           <div className="skp-field full">
             <label>Poznámka <span style={{ color: 'var(--sk-mute)', fontWeight: 400 }}>(nepovinné)</span></label>
-            <textarea className="skp-input" value={form.note}
-              placeholder={mode === 'tenis' ? t('note_placeholder_tenis', 'Např. půjčení vybavení, počet hráčů…') : t('note_placeholder_gym', 'Např. první návštěva, potřebuji instruktora…')}
-              onChange={(e) => setForm({ ...form, note: e.target.value })} />
+            {edit.enabled ? (
+              // Placeholder je atribut textarey a nelze ho editovat inline — v editaci
+              // ho zastupuje editovatelný text ve stejně stylovaném rámečku.
+              <div className="skp-input sk-ed-ph-field">
+                <T
+                  k={mode === 'tenis' ? 'note_placeholder_tenis' : 'note_placeholder_gym'}
+                  fallback={mode === 'tenis' ? 'Např. půjčení vybavení, počet hráčů…' : 'Např. první návštěva, potřebuji instruktora…'}
+                />
+              </div>
+            ) : (
+              <textarea className="skp-input" value={form.note}
+                placeholder={mode === 'tenis' ? t('note_placeholder_tenis', 'Např. půjčení vybavení, počet hráčů…') : t('note_placeholder_gym', 'Např. první návštěva, potřebuji instruktora…')}
+                onChange={(e) => setForm({ ...form, note: e.target.value })} />
+            )}
           </div>
           <div className="skp-field full">
             <label>Způsob platby <span className="req">*</span></label>
             <div className="skp-payment">
               <label>
                 <input type="radio" name="payment" value="hotove" checked={form.payment === 'hotove'} onChange={() => setForm({ ...form, payment: 'hotove' })} />
-                <span><strong>{t('payment_hotove_title', 'Osobně')}</strong>{t('payment_hotove_desc', 'Při vrácení klíčů u správce')}</span>
+                <span><strong><T k="payment_hotove_title" fallback="Osobně" /></strong><T k="payment_hotove_desc" fallback="Při vrácení klíčů u správce" /></span>
               </label>
               <label>
                 <input type="radio" name="payment" value="prevod" checked={form.payment === 'prevod'} onChange={() => setForm({ ...form, payment: 'prevod' })} />
-                <span><strong>{t('payment_prevod_title', 'Převodem')}</strong>{t('payment_prevod_desc', 'Na účet Sokola Kramolna')}</span>
+                <span><strong><T k="payment_prevod_title" fallback="Převodem" /></strong><T k="payment_prevod_desc" fallback="Na účet Sokola Kramolna" /></span>
               </label>
             </div>
           </div>
           <div className="full">
             <p className="skp-rules-notice">
-              {t('rules_notice', 'Vstupem na kurt souhlasíte s')} <a onClick={(e) => { e.preventDefault(); setShowRules(true); }}>{t('rules_notice_link', 'provozním řádem')}</a>.
+              <T k="rules_notice" fallback="Vstupem na kurt souhlasíte s" />{' '}
+              {/* V editaci klik na odkaz edituje text; modál řádu otevírá navigátor stavů */}
+              <a onClick={(e) => { e.preventDefault(); if (!edit.enabled) setShowRules(true); }}>
+                <T k="rules_notice_link" fallback="provozním řádem" />
+              </a>.
             </p>
           </div>
         </div>
@@ -560,14 +619,26 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
           <div className="lbl">Platba</div>
           <div className="kv">
             <span className="k">Způsob platby</span>
-            <span className="v">{form.payment === 'hotove' ? t('payment_full_hotove', 'Osobně při vrácení klíčů') : t('payment_full_prevod', 'Převodem na účet Sokola')}</span>
+            <span className="v">{form.payment === 'hotove'
+              ? <T k="payment_full_hotove" fallback="Osobně při vrácení klíčů" />
+              : <T k="payment_full_prevod" fallback="Převodem na účet Sokola" />}</span>
           </div>
           <div className="kv"><span className="k">Celkem k úhradě</span><span className="v" style={{ fontSize: 18 }}>{total} Kč</span></div>
-          <p style={{ fontSize: 13, color: 'var(--sk-mute)', margin: '8px 0 0', lineHeight: 1.5 }}>{emailVerification ? t('review_cancel_verify', 'Rezervaci lze kdykoliv zdarma zrušit kliknutím na odkaz v potvrzovacím e-mailu.') : t('review_cancel_noverify', 'Rezervaci lze zrušit kontaktováním správce.')}</p>
+          <p style={{ fontSize: 13, color: 'var(--sk-mute)', margin: '8px 0 0', lineHeight: 1.5 }}>{emailVerification
+            ? <T k="review_cancel_verify" fallback="Rezervaci lze kdykoliv zdarma zrušit kliknutím na odkaz v potvrzovacím e-mailu." />
+            : <T k="review_cancel_noverify" fallback="Rezervaci lze zrušit kontaktováním správce." />}</p>
         </div>
       </div>
     );
   }
+
+  // Uložení provozního řádu (patch celého dokumentu — zrcadlí widget doc_sections)
+  const saveRad = (patch: Partial<DocData>) => {
+    if (radObj) void edit.patchData(radObj.id, { ...radObj.data, ...patch });
+  };
+  const patchSection = (si: number, patchFn: (s: DocData['sections'][number]) => DocData['sections'][number]) => {
+    if (rad) saveRad({ sections: rad.sections.map((s, i) => (i === si ? patchFn(s) : s)) });
+  };
 
   const rulesModal = showRules && rad && (
     <div className="skp-modal-overlay" onClick={() => setShowRules(false)}>
@@ -577,17 +648,38 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
             <path d="M18 6 6 18M6 6l12 12"/>
           </svg>
         </button>
-        <h3>{rad.title}</h3>
-        <p>{rad.intro}</p>
+        <EditableText as="h3" value={rad.title} onSave={(v) => saveRad({ title: v })} />
+        <EditableText as="p" multiline value={rad.intro} onSave={(v) => saveRad({ intro: v })} />
         {rad.sections.map((sec, si) => (
           <React.Fragment key={si}>
-            <h4>{sec.title}</h4>
+            <div className="sk-ed-row">
+              <EditableText as="h4" value={sec.title} onSave={(v) => patchSection(si, (s) => ({ ...s, title: v }))} />
+              {edit.enabled && (
+                <button type="button" className="sk-ed-doc-del" title="Smazat sekci"
+                  onClick={() => { if (window.confirm('Opravdu smazat celou sekci?')) saveRad({ sections: rad.sections.filter((_, i) => i !== si) }); }}>
+                  🗑
+                </button>
+              )}
+            </div>
             <ul>
-              {sec.items.map((item, ii) => <li key={ii}>{renderInline(item)}</li>)}
+              {sec.items.map((item, ii) => (
+                <li key={ii} className="sk-ed-row">
+                  <EditableText as="span" multiline value={item}
+                    onSave={(v) => patchSection(si, (s) => ({ ...s, items: s.items.map((x, j) => (j === ii ? v : x)) }))} />
+                  {edit.enabled && (
+                    <button type="button" className="sk-ed-doc-del" title="Smazat bod"
+                      onClick={() => patchSection(si, (s) => ({ ...s, items: s.items.filter((_, j) => j !== ii) }))}>
+                      🗑
+                    </button>
+                  )}
+                </li>
+              ))}
             </ul>
+            <AddRowSlot label="Přidat bod" onClick={() => patchSection(si, (s) => ({ ...s, items: [...s.items, 'Nový bod'] }))} />
           </React.Fragment>
         ))}
-        <p className="skp-modal-footer">{rad.footer}</p>
+        <AddRowSlot label="Přidat sekci" onClick={() => saveRad({ sections: [...rad.sections, { title: 'Nová sekce', items: [] }] })} />
+        <EditableText as="p" multiline className="skp-modal-footer" value={rad.footer} onSave={(v) => saveRad({ footer: v })} />
         <div style={{ marginTop: 24 }}>
           <button className="skp-btn-primary" style={{ maxWidth: 260 }} onClick={() => setShowRules(false)}>
             Zavřít
@@ -607,6 +699,7 @@ export function ReservationFlow({ mode, onGoOverview }: Props) {
         </div>
       </div>
       {rulesModal}
+      {navigator}
     </>
   );
 }

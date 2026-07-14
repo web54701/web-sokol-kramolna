@@ -21,3 +21,9 @@ export const CARD_ICON_SPEC: ImageSpec = {
   maxWidth: 100,
   hint: 'Ikona karty se zobrazuje 100 px na šířku. Větší obrázek se zmenší na 100 px, menší zůstane beze změny (nezvětšujeme). Poměr stran se zachová.',
 };
+
+// Logo (.sk-logo-img) je vysoké 48 px, šířka auto — 96 px pokryje i retina displeje.
+export const LOGO_IMAGE_SPEC: ImageSpec = {
+  maxWidth: 96,
+  hint: 'Logo se v hlavičce zobrazuje 48 px na výšku. Stačí obrázek do 96 px šířky; větší se zmenší, poměr stran se zachová.',
+};

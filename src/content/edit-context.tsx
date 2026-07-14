@@ -7,6 +7,9 @@ import { createContext, useContext } from 'react';
  */
 export type EditApi = {
   enabled: boolean;
+  /** Editovatelnost hlavičky a patičky — jen při fokusu na chrome (sekce Logo a menu /
+   *  Patička), jinak kliky v navigaci dál přepínají editovanou stránku. */
+  chromeEditable: boolean;
   /** Uloží nová data objektu. Objekty z fallbacku (id < 0) se nejdřív POSTem zhmotní. */
   patchData: (id: number, data: Record<string, unknown>) => Promise<void>;
   /** Skryje/zobrazí objekt (hidden). */
@@ -15,14 +18,18 @@ export type EditApi = {
   remove: (id: number) => Promise<void>;
   /** Vytvoří nový objekt v zóně (na konec). */
   createInZone: (zone: string, type: string, data: Record<string, unknown>) => Promise<void>;
+  /** Přeuspořádá objekty zóny podle pořadí id. */
+  reorder: (zone: string, orderedIds: number[]) => Promise<void>;
 };
 
 const DISABLED: EditApi = {
   enabled: false,
+  chromeEditable: false,
   patchData: async () => {},
   setHidden: async () => {},
   remove: async () => {},
   createInZone: async () => {},
+  reorder: async () => {},
 };
 
 export const EditContext = createContext<EditApi>(DISABLED);

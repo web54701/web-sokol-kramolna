@@ -435,3 +435,162 @@
   font-size: 13px;
   opacity: 0.85;
 }
+
+/* --- Editace hlavičky a patičky (fokus z levého menu) --- */
+
+/* Krátké zvýraznění editovaného prvku po otevření sekce. */
+.sk-ed-focus-flash {
+  animation: sk-ed-flash 0.8s ease 3;
+}
+@keyframes sk-ed-flash {
+  0%, 100% { box-shadow: inset 0 0 0 0 transparent; }
+  50% { box-shadow: inset 0 0 0 4px var(--sk-rust); }
+}
+
+/* Tužka u loga — logo je malé, tužku zmenšit a ukázat na hover celé .sk-logo. */
+.sk-logo { position: relative; }
+.sk-logo .sk-ed-pencil {
+  top: 50%;
+  left: 6px;
+  right: auto;
+  transform: translateY(-50%);
+  width: 26px;
+  height: 26px;
+}
+.sk-logo:hover .sk-ed-pencil { opacity: 1; }
+
+/* Editovatelné řádky v navigaci a patičce: toolbar pod položkou (nad ní by ho
+   ořízl horní okraj plátna), kompaktní „+ přidat" v řádku. */
+.sk-nav .sk-ed-row,
+.sk-footer-links .sk-ed-row {
+  display: inline-flex;
+  align-items: center;
+}
+.sk-nav .sk-ed-toolbar,
+.sk-footer-links .sk-ed-toolbar {
+  top: auto;
+  right: auto;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+}
+.sk-nav .sk-ed-toolbar { top: calc(100% + 6px); }
+.sk-footer-links .sk-ed-toolbar { bottom: calc(100% + 6px); }
+.sk-nav .sk-ed-add-row,
+.sk-footer-links .sk-ed-add-row {
+  margin-top: 0;
+  padding: 4px 10px;
+  font-size: 12px;
+  color: var(--sk-cream-50);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+.sk-nav .sk-ed-add-row:hover,
+.sk-footer-links .sk-ed-add-row:hover {
+  color: #fff;
+  border-color: var(--sk-gold);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* --- Editace rezervačního průvodce --- */
+
+/* Plovoucí navigátor stavů průvodce (jen na plátně). */
+.sk-ed-resv-nav {
+  position: fixed;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: min(94vw, 760px);
+  padding: 10px 14px;
+  background: rgba(20, 48, 40, 0.95);
+  color: var(--sk-cream-50);
+  border-radius: 14px;
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.35);
+  font-size: 12px;
+}
+.sk-ed-resv-nav-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.sk-ed-resv-nav-label {
+  min-width: 46px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 10px;
+  opacity: 0.7;
+}
+.sk-ed-resv-nav button,
+.sk-ed-resv-nav select {
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: transparent;
+  color: inherit;
+  border-radius: 8px;
+  padding: 4px 9px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.sk-ed-resv-nav select { background: rgba(20, 48, 40, 0.95); }
+.sk-ed-resv-nav button:hover { background: rgba(255, 255, 255, 0.12); }
+.sk-ed-resv-nav button.is-active,
+.sk-ed-resv-nav select.is-active {
+  background: var(--sk-rust);
+  border-color: var(--sk-rust);
+}
+.sk-ed-resv-nav-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  cursor: pointer;
+}
+.sk-ed-resv-nav-hint {
+  font-size: 10px;
+  opacity: 0.6;
+}
+
+/* Náhled návratové stránky z e-mailu — kopíruje layout worker.ts html(). */
+.sk-ed-email-screen {
+  max-width: 480px;
+  margin: 80px auto;
+  padding: 0 24px 120px;
+  color: #222;
+}
+.sk-ed-email-screen > p:first-child {
+  font-size: 1.1rem;
+  line-height: 1.6;
+}
+.sk-ed-email-screen-note {
+  margin-top: 24px;
+  font-size: 12px;
+  color: var(--sk-mute);
+  font-style: italic;
+}
+
+/* Editovatelná náhrada placeholderu textarey (poznámka v kroku 2). */
+.sk-ed-ph-field {
+  min-height: 58px;
+  color: var(--sk-mute);
+}
+
+/* Mazání bodu/sekce v modálu provozního řádu. */
+.sk-ed-doc-del {
+  position: absolute;
+  top: 0;
+  right: -4px;
+  border: 0;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.94);
+  padding: 2px 5px;
+  font-size: 12px;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+.sk-ed-row:hover > .sk-ed-doc-del { opacity: 1; }

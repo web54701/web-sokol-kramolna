@@ -11,8 +11,12 @@ export type CmsPage = 'home' | 'onas' | 'tenis' | 'gym' | 'kontakt';
 
 export type CmsGlobalGroup = 'identity' | 'contact' | 'footer' | 'emails' | 'reservation';
 
+/** Fokus živé editace na globální prvek stránky (hlavička/patička). */
+export type ChromeFocus = 'header' | 'footer';
+
 export type CmsSection =
-  | { kind: 'live'; page: CmsPage }
+  | { kind: 'live'; page: CmsPage; focus?: ChromeFocus }
+  | { kind: 'live-resv' }
   | { kind: 'page'; page: CmsPage }
   | { kind: 'global'; group: CmsGlobalGroup }
   | { kind: 'media' }
@@ -35,8 +39,19 @@ const GLOBAL_ITEMS: { group: CmsGlobalGroup; label: string }[] = [
   { group: 'reservation', label: 'Rezervace — texty' },
 ];
 
+/** Globální skupiny s živou editací: hlavička/patička se editují na plátně domovské stránky. */
+const FOCUS_OF: Partial<Record<CmsGlobalGroup, ChromeFocus>> = { identity: 'header', footer: 'footer' };
+
+/** Živá varianta globální sekce (fokus na chrome, resp. plátno rezervace); undefined = jen formulář. */
+function liveSectionOf(group: CmsGlobalGroup): CmsSection | undefined {
+  const focus = FOCUS_OF[group];
+  if (focus) return { kind: 'live', page: 'home', focus };
+  if (group === 'reservation') return { kind: 'live-resv' };
+  return undefined;
+}
+
 function sectionKey(s: CmsSection): string {
-  if (s.kind === 'live') return `live:${s.page}`;
+  if (s.kind === 'live') return `live:${s.page}` + (s.focus ? `:${s.focus}` : '');
   if (s.kind === 'page') return `page:${s.page}`;
   if (s.kind === 'global') return `global:${s.group}`;
   return s.kind;
@@ -49,7 +64,10 @@ export function AdminLayout({ user, onLogout }: { user: AdminUser; onLogout: () 
   const [previewOpen, setPreviewOpen] = useState(false);
 
   // Náhled otevíráme na stránce, která se právě edituje; u sekcí bez stránky na úvodu
-  const previewPage: CmsPage = section.kind === 'live' || section.kind === 'page' ? section.page : 'home';
+  const previewPage: CmsPage =
+    section.kind === 'live' || section.kind === 'page' ? section.page
+    : section.kind === 'live-resv' ? 'tenis'
+    : 'home';
 
   const logout = async () => {
     try { await apiSend('POST', '/api/auth/logout'); } catch { /* cookie se smaže i tak */ }
@@ -85,7 +103,10 @@ export function AdminLayout({ user, onLogout }: { user: AdminUser; onLogout: () 
           <div className="cms-nav-group">
             <div className="cms-nav-title">Stránky</div>
             {PAGE_ITEMS.map((it) => {
-              const active = (section.kind === 'live' || section.kind === 'page') && section.page === it.page;
+              // Při fokusu na hlavičku/patičku svítí jen globální položka, ne stránka na plátně
+              const active = (section.kind === 'live' || section.kind === 'page')
+                && section.page === it.page
+                && !(section.kind === 'live' && section.focus);
               return (
                 <button
                   key={it.page}
@@ -99,7 +120,22 @@ export function AdminLayout({ user, onLogout }: { user: AdminUser; onLogout: () 
           </div>
           <div className="cms-nav-group">
             <div className="cms-nav-title">Globální</div>
-            {GLOBAL_ITEMS.map((it) => navBtn({ kind: 'global', group: it.group }, it.label))}
+            {GLOBAL_ITEMS.map((it) => {
+              const live = liveSectionOf(it.group);
+              if (!live) return navBtn({ kind: 'global', group: it.group }, it.label);
+              // Sekce s živou variantou se chovají jako stránky: otevírají se dle pageMode
+              const active = sectionKey(section) === sectionKey(live)
+                || (section.kind === 'global' && section.group === it.group);
+              return (
+                <button
+                  key={it.group}
+                  className={`cms-nav-btn${active ? ' active' : ''}`}
+                  onClick={() => setSection(pageMode === 'live' ? live : { kind: 'global', group: it.group })}
+                >
+                  {it.label}
+                </button>
+              );
+            })}
           </div>
           <div className="cms-nav-group">
             <div className="cms-nav-title">Systém</div>
@@ -108,12 +144,25 @@ export function AdminLayout({ user, onLogout }: { user: AdminUser; onLogout: () 
             {navBtn({ kind: 'users' }, 'Uživatelé')}
           </div>
         </nav>
-        <main className={'cms-content' + (section.kind === 'live' ? ' cms-content-live' : '')}>
+        <main className={'cms-content' + (section.kind === 'live' || section.kind === 'live-resv' ? ' cms-content-live' : '')}>
           {section.kind === 'live' && (
             <LiveEditor
               page={section.page}
+              focus={section.focus}
               onNavigate={(p) => setSection({ kind: 'live', page: p })}
-              onSwitchToForm={() => { setPageMode('page'); setSection({ kind: 'page', page: section.page }); }}
+              onSwitchToForm={() => {
+                setPageMode('page');
+                // Fokusovaná editace chrome se vrací do své globální sekce, ne do formuláře stránky
+                if (section.focus) setSection({ kind: 'global', group: section.focus === 'header' ? 'identity' : 'footer' });
+                else setSection({ kind: 'page', page: section.page });
+              }}
+            />
+          )}
+          {section.kind === 'live-resv' && (
+            <LiveEditor
+              page="resv"
+              onNavigate={(p) => setSection({ kind: 'live', page: p })}
+              onSwitchToForm={() => { setPageMode('page'); setSection({ kind: 'global', group: 'reservation' }); }}
             />
           )}
           {(section.kind === 'page' || section.kind === 'global') && (
@@ -122,7 +171,9 @@ export function AdminLayout({ user, onLogout }: { user: AdminUser; onLogout: () 
               onSwitchToLive={
                 section.kind === 'page'
                   ? () => { setPageMode('live'); setSection({ kind: 'live', page: section.page }); }
-                  : undefined
+                  : liveSectionOf(section.group)
+                    ? () => { setPageMode('live'); setSection(liveSectionOf(section.group)!); }
+                    : undefined
               }
             />
           )}

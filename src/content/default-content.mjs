@@ -211,4 +211,11 @@ export const DEFAULT_CONTENT = [
   { zone: 'resv.texts', type: 'ui_text', data: { key: 'success_note_sent', text: 'Shrnutí rezervace jsme odeslali na výše uvedenou adresu. Chcete-li rezervaci zrušit, kontaktujte správce.' } },
   { zone: 'resv.texts', type: 'ui_text', data: { key: 'success_title_plain', text: 'Rezervace je potvrzena' } },
   { zone: 'resv.texts', type: 'ui_text', data: { key: 'success_note_plain', text: 'Chcete-li rezervaci zrušit, kontaktujte správce.' } },
+  // Návratové stránky po kliknutí na odkaz v e-mailu (renderuje je worker, prostý text)
+  { zone: 'resv.texts', type: 'ui_text', data: { key: 'email_link_invalid', text: 'Neplatný odkaz.' } },
+  { zone: 'resv.texts', type: 'ui_text', data: { key: 'email_confirm_ok', text: 'Rezervace byla úspěšně potvrzena. Děkujeme!' } },
+  { zone: 'resv.texts', type: 'ui_text', data: { key: 'email_confirm_already', text: 'Rezervace již byla potvrzena dříve. Děkujeme!' } },
+  { zone: 'resv.texts', type: 'ui_text', data: { key: 'email_confirm_notfound', text: 'Rezervace nebyla nalezena nebo již neexistuje.' } },
+  { zone: 'resv.texts', type: 'ui_text', data: { key: 'email_cancel_ok', text: 'Rezervace byla úspěšně zrušena.' } },
+  { zone: 'resv.texts', type: 'ui_text', data: { key: 'email_cancel_notfound', text: 'Rezervace nebyla nalezena nebo již byla zrušena.' } },
 ];

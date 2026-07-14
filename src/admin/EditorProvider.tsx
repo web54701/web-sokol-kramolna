@@ -28,7 +28,10 @@ function defaultObjects(): ContentObject[] {
  * ContentContext (aby useZone/useSingleton fungovaly beze změny) a zároveň přes
  * EditContext nabízí mutátory, které volají API a optimisticky aktualizují stav.
  */
-export function EditorProvider({ children }: { children: ReactNode }) {
+export function EditorProvider({ children, chromeEditable = false }: {
+  children: ReactNode;
+  chromeEditable?: boolean;
+}) {
   const [objects, setObjects] = useState<ContentObject[] | null>(null);
 
   useEffect(() => {
@@ -85,9 +88,20 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     setObjects((prev) => [...(prev ?? []), created]);
   };
 
+  const reorder = async (zone: string, orderedIds: number[]) => {
+    setObjects((prev) => prev?.map((o) =>
+      o.zone === zone && orderedIds.includes(o.id) ? { ...o, sort: orderedIds.indexOf(o.id) } : o
+    ) ?? prev);
+    // Fallback objekty (id < 0) nejsou v DB — pořadí se drží jen lokálně,
+    // stejně jako formulářový editor na neseedované DB nic nenabízí.
+    if (orderedIds.every((id) => id >= 0)) {
+      await apiSend('PUT', '/api/admin/content/reorder', { zone, ids: orderedIds });
+    }
+  };
+
   if (objects === null) return <div className="cms-loading">Načítání…</div>;
 
-  const api: EditApi = { enabled: true, patchData, setHidden, remove, createInZone };
+  const api: EditApi = { enabled: true, chromeEditable, patchData, setHidden, remove, createInZone, reorder };
 
   return (
     <ContentContext.Provider value={objects}>

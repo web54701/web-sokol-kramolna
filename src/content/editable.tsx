@@ -229,14 +229,32 @@ export function AddCardSlot({ onClick }: { onClick: () => void }) {
   );
 }
 
-type RowActionsProps = { hidden: boolean; onToggleHidden: () => void; onDelete: () => void };
+type RowActionsProps = {
+  hidden: boolean;
+  onToggleHidden: () => void;
+  onDelete: () => void;
+  /** Otevře editační dialog položky (pole, která nejdou upravit inline — např. cíl odkazu). */
+  onEdit?: () => void;
+  /** Přesun v pořadí; tlačítko se vykreslí, jen když je handler předaný. */
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
+};
 
-/** Dvojice tlačítek (očičko / popelnice) pro položky zón bez vlastního editačního dialogu — text se upravuje inline. */
-export function RowActions({ hidden, onToggleHidden, onDelete }: RowActionsProps) {
+/** Tlačítka položky zóny (volitelně tužka a šipky, vždy očičko / popelnice) — text se upravuje inline. */
+export function RowActions({ hidden, onToggleHidden, onDelete, onEdit, onMoveUp, onMoveDown }: RowActionsProps) {
   const { enabled } = useEdit();
   if (!enabled) return null;
   return (
     <div className="sk-ed-toolbar">
+      {onEdit && (
+        <button type="button" onClick={stop(onEdit)} title="Upravit"><Icon.pencil size={16} /></button>
+      )}
+      {onMoveUp && (
+        <button type="button" onClick={stop(onMoveUp)} title="Posunout výš">↑</button>
+      )}
+      {onMoveDown && (
+        <button type="button" onClick={stop(onMoveDown)} title="Posunout níž">↓</button>
+      )}
       <button type="button" onClick={stop(onToggleHidden)} title={hidden ? 'Zobrazit' : 'Skrýt'}>
         {hidden ? <Icon.eyeOff size={16} /> : <Icon.eye size={16} />}
       </button>

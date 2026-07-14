@@ -223,6 +223,22 @@ async function getEmailTemplate(env: Env, key: string): Promise<EmailTemplate> {
   return DEFAULT_EMAIL_TEMPLATES[key];
 }
 
+/** Text průvodce z CMS (zóna resv.texts) — pro návratové stránky z e-mailu. */
+async function getUiText(env: Env, key: string, fallback: string): Promise<string> {
+  try {
+    const { results } = await env.DB.prepare(
+      "SELECT data FROM content_objects WHERE zone = 'resv.texts' AND hidden = 0"
+    ).all<{ data: string }>();
+    for (const r of results) {
+      const d = JSON.parse(r.data) as { key?: string; text?: string };
+      if (d.key === key && d.text) return d.text;
+    }
+  } catch {
+    // tabulka content_objects nemusí existovat — použije se fallback
+  }
+  return fallback;
+}
+
 function fillTemplate(template: string, vars: Record<string, string>): string {
   return template.replace(/\{(\w+)\}/g, (match, key: string) => vars[key] ?? match);
 }
@@ -662,7 +678,7 @@ async function handleAdminConfirm(request: Request, env: Env): Promise<Response>
 
 async function handleConfirmReservation(request: Request, env: Env): Promise<Response> {
   const token = new URL(request.url).searchParams.get('token');
-  if (!token) return html('Neplatný odkaz.', 400);
+  if (!token) return html(await getUiText(env, 'email_link_invalid', 'Neplatný odkaz.'), 400);
 
   const result = await env.DB.prepare(
     'UPDATE reservations SET confirmed_at = ? WHERE cancel_token = ? AND confirmed_at IS NULL'
@@ -673,26 +689,26 @@ async function handleConfirmReservation(request: Request, env: Env): Promise<Res
       'SELECT confirmed_at FROM reservations WHERE cancel_token = ?'
     ).bind(token).first<{ confirmed_at: string | null }>();
 
-    if (row?.confirmed_at) return html('Rezervace již byla potvrzena dříve. Děkujeme!');
-    return html('Rezervace nebyla nalezena nebo již neexistuje.', 404);
+    if (row?.confirmed_at) return html(await getUiText(env, 'email_confirm_already', 'Rezervace již byla potvrzena dříve. Děkujeme!'));
+    return html(await getUiText(env, 'email_confirm_notfound', 'Rezervace nebyla nalezena nebo již neexistuje.'), 404);
   }
 
-  return html('Rezervace byla úspěšně potvrzena. Děkujeme!');
+  return html(await getUiText(env, 'email_confirm_ok', 'Rezervace byla úspěšně potvrzena. Děkujeme!'));
 }
 
 async function handleCancelReservation(request: Request, env: Env): Promise<Response> {
   const token = new URL(request.url).searchParams.get('token');
-  if (!token) return html('Neplatný odkaz.', 400);
+  if (!token) return html(await getUiText(env, 'email_link_invalid', 'Neplatný odkaz.'), 400);
 
   const result = await env.DB.prepare(
     'DELETE FROM reservations WHERE cancel_token = ?'
   ).bind(token).run();
 
   if (result.meta.changes === 0) {
-    return html('Rezervace nebyla nalezena nebo již byla zrušena.', 404);
+    return html(await getUiText(env, 'email_cancel_notfound', 'Rezervace nebyla nalezena nebo již byla zrušena.'), 404);
   }
 
-  return html('Rezervace byla úspěšně zrušena.');
+  return html(await getUiText(env, 'email_cancel_ok', 'Rezervace byla úspěšně zrušena.'));
 }
 
 export default {
