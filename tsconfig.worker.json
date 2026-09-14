@@ -18,5 +18,5 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src/worker.ts", "src/server"]
+  "include": ["src/worker.ts", "src/server", "functions", "cron-worker/src"]
 }

@@ -1,54 +1,34 @@
+// Konfigurace Cloudflare Pages projektu. Je zdrojem pravdy pro bindingy —
+// jakmile soubor existuje, Pages je čte odtud a v dashboardu je nelze editovat.
+// Platí i pro `wrangler pages dev` a pro migrace přes `wrangler d1 execute`.
+// Secrets (Gmail, Resend) se nastavují výhradně v dashboardu.
+//
+// Lokální vývoj (`npm run dev`) používá wrangler.dev.jsonc.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "web-sokol-kramolna",
-  "main": "src/worker.ts",
+  "pages_build_output_dir": "dist",
   "compatibility_date": "2026-05-30",
-  "observability": {
-    "enabled": true
-  },
-  "assets": {
-    "not_found_handling": "single-page-application",
-    "run_worker_first": ["/api/*", "/media/*"]
-  },
+
+  // Produkce (větev main)
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "sokol-kramolna-db",
+      "database_id": "ad8dfe4a-6c05-4f89-8389-22c04b611bd3"
+    }
+  ],
   "r2_buckets": [
     {
       "binding": "MEDIA",
       "bucket_name": "sokol-kramolna-media"
     }
   ],
-  "compatibility_flags": [
-    "nodejs_compat"
-  ],
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "sokol-kramolna-db",
-      // Získejte ID spuštěním: npx wrangler d1 create sokol-kramolna-db
-      "database_id": "ad8dfe4a-6c05-4f89-8389-22c04b611bd3"
-    }
-  ],
-  "triggers": {
-    // Spustí se 1. každého měsíce v 9:00 UTC – obnoví Gmail token a ověří platnost
-    "crons": ["0 9 1 * *"]
-  },
 
-  // Izolované staging prostředí (branch „bokem"): vlastní worker, vlastní databáze
-  // i R2 bucket, BEZ cronu (aby staging neposílal měsíční e-maily). Produkce netknutá.
-  // Nasazení (vite-plugin vybírá prostředí přes CLOUDFLARE_ENV, ne přes --env):
-  //   CLOUDFLARE_ENV=staging npm run build && npx wrangler deploy
+  // Preview (všechny ostatní větve) — dřívější staging prostředí.
+  // Pozor: bindingy se do prostředí nedědí, proto se tu vypisují celé.
   "env": {
-    "staging": {
-      "name": "web-sokol-kramolna-staging",
-      "assets": {
-        "not_found_handling": "single-page-application",
-        "run_worker_first": ["/api/*", "/media/*"]
-      },
-      "r2_buckets": [
-        {
-          "binding": "MEDIA",
-          "bucket_name": "sokol-kramolna-media-staging"
-        }
-      ],
+    "preview": {
       "d1_databases": [
         {
           "binding": "DB",
@@ -56,9 +36,12 @@
           "database_id": "99e1b9f0-6dd8-4a5f-b7d4-559ff9b116b4"
         }
       ],
-      "triggers": {
-        "crons": []
-      }
+      "r2_buckets": [
+        {
+          "binding": "MEDIA",
+          "bucket_name": "sokol-kramolna-media-staging"
+        }
+      ]
     }
   }
 }

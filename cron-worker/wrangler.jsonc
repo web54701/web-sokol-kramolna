@@ -1,0 +1,15 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "sokol-kramolna-cron",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-05-30",
+  "observability": {
+    "enabled": true
+  },
+  // Cloudflare Pages neumí cron triggery, proto měsíční kontrola
+  // Gmail tokenu běží jako samostatný Worker. Žádné bindingy nepotřebuje.
+  "triggers": {
+    // 1. každého měsíce v 9:00 UTC
+    "crons": ["0 9 1 * *"]
+  }
+}

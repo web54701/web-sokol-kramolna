@@ -1,0 +1,29 @@
+// Config jen pro lokální vývoj (@cloudflare/vite-plugin, `npm run dev`).
+// Spouští src/worker.ts nad lokální D1/R2 a napodobuje chování Pages:
+// statika napřímo, /api a /media přes worker, neznámé cesty na index.html.
+// Produkční konfigurace je ve wrangler.jsonc.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "web-sokol-kramolna-dev",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-05-30",
+  "assets": {
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*", "/media/*"]
+  },
+  // Stejná ID jako v produkci, aby dev i `wrangler d1 execute --local`
+  // sdílely tentýž lokální stav v .wrangler/state.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "sokol-kramolna-db",
+      "database_id": "ad8dfe4a-6c05-4f89-8389-22c04b611bd3"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "MEDIA",
+      "bucket_name": "sokol-kramolna-media"
+    }
+  ]
+}
